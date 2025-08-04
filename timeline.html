@@ -1,0 +1,1866 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale= 1.0">
+    <title>Timeline App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        .line-clamp-3 {
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 transition-colors duration-300">
+    <div id="app">
+        <!-- Header -->
+        <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+            <div class="max-w-6xl mx-auto flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <button id="back-btn" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors hidden">
+                        ←
+                    </button>
+                    <h1 class="text-2xl font-bold flex items-center gap-2">
+                       
+                    </h1>
+                </div>
+                <button id="theme-toggle" class="p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700">
+                    🌙
+                </button>
+            </div>
+        </header>
+
+        <main class="max-w-6xl mx-auto px-6 py-8">
+            <!-- Dashboard View -->
+            <div id="dashboard-view">
+                <div class="mb-4">
+                    <h2 class="text-3xl font-bold mb-2 text-center">Your Timelines</h2>
+                    <p class="text-gray-600 dark:text-gray-400 text-center">Create and manage your personal timelines</p>
+                    </div>
+                <!-- Dashboard controls -->
+                <div class="flex justify-center gap-4 mb-6">
+                    <button id="new-timeline-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors font-medium">
+                        ➕ New Timeline
+                    </button>
+                </div>
+                <hr class="border-t border-gray-300 dark:border-gray-700 opacity-40 mb-8" />
+                <div id="timelines-grid" class="flex flex-col">
+                    <!-- Timeline axes are rendered here -->
+                </div>
+            </div>
+
+            <!-- Create Timeline View -->
+            <div id="create-timeline-view" class="hidden max-w-2xl">
+                <h2 class="text-3xl font-bold mb-8">Create New Timeline</h2>
+                
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-2">Timeline Title</label>
+                        <input type="text" id="timeline-title" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" placeholder="Enter timeline title...">
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-2">Description</label>
+                        <textarea id="timeline-description" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" rows="4" placeholder="Describe your timeline..."></textarea>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-2">Start Date</label>
+                        <input type="date" id="timeline-start-date" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                    </div>
+                    <div class="mb-6 flex gap-4 items-center">
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium mb-2">End Date</label>
+                            <input type="date" id="timeline-end-date" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                        </div>
+                        <div class="flex flex-col items-center mt-6">
+                            <label class="text-xs mb-1">Present</label>
+                            <input type="checkbox" id="timeline-present">
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-4">
+                        <button id="create-timeline-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors font-medium">
+                            Create Timeline
+                        </button>
+                        <button id="cancel-create-btn" class="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 px-6 py-3 rounded-lg transition-colors font-medium">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline View -->
+            <div id="timeline-view" class="hidden">
+                <div class="flex justify-between items-start mb-8">
+                    <div>
+                        <h2 id="timeline-title-display" class="text-3xl font-bold mb-2"></h2>
+                        <p id="timeline-description-display" class="text-gray-600 dark:text-gray-400 text-lg"></p>
+                    </div>
+                    <button id="add-event-btn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors font-medium">
+                        ➕ Add Event
+                    </button>
+                </div>
+
+                <div id="events-container">
+                    <!-- Events will be inserted here -->
+                </div>
+
+                <!-- Empty state -->
+                <div id="empty-timeline" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-12 text-center hidden">
+                    <div class="text-6xl mb-4">📅</div>
+                    <h3 class="text-xl font-semibold mb-2">No events yet</h3>
+                    <p class="text-gray-600 dark:text-gray-400 mb-4">Start building your timeline by adding your first event</p>
+                    <button id="add-first-event-btn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg transition-colors font-medium">
+                        Add First Event
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Add Event Modal -->
+        <div id="add-event-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md">
+                <h3 class="text-xl font-bold mb-4">Add New Event</h3>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Date</label>
+                    <input type="date" id="event-date" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Event Title</label>
+                    <input type="text" id="event-title" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" placeholder="Enter event title...">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Description</label>
+                    <textarea id="event-description" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" rows="3" placeholder="Describe the event..."></textarea>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2">Media (Optional)</label>
+                    <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-lg p-4 text-center transition-colors">
+                        <div class="text-2xl mb-2">📁</div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Click to upload or drag and drop</p>
+                        <p class="text-xs text-gray-400 mt-1">MP3, MP4, PDF, JPG, PNG up to 10MB</p>
+                    </div>
+                </div>
+                
+                <div class="flex gap-4">
+                    <button id="save-event-btn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg transition-colors font-medium flex-1">
+                        Add Event
+                    </button>
+                    <button id="cancel-event-btn" class="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 px-6 py-3 rounded-lg transition-colors font-medium">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add this modal to your HTML, hidden by default -->
+        <div id="span-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md">
+                <h3 class="text-xl font-bold mb-4">Add New Span</h3>
+                <form id="span-form">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Title</label>
+                        <input type="text" id="span-title" class="w-full px-4 py-3 rounded-lg border" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Description</label>
+                        <textarea id="span-description" class="w-full px-4 py-3 rounded-lg border" rows="3"></textarea>
+                    </div>
+                    <div class="mb-4 flex gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Start Date</label>
+                            <input type="date" id="span-start-date" class="px-4 py-3 rounded-lg border" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">End Date</label>
+                            <input type="date" id="span-end-date" class="px-4 py-3 rounded-lg border" required>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Color</label>
+                        <input type="color" id="span-color" value="#22c55e" class="w-12 h-8 p-0 border-0">
+                    </div>
+                    <div class="flex gap-4">
+                        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium flex-1">Add Span</button>
+                        <button type="button" id="cancel-span-btn" class="px-6 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 font-medium flex-1">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Occurrence/Event Modal -->
+        <div id="occ-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md">
+                <h3 id="occ-modal-title" class="text-xl font-bold mb-4">Add New Occurrence</h3>
+                <form id="occ-form">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Title</label>
+                        <input type="text" id="occ-title" class="w-full px-4 py-3 rounded-lg border" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Date</label>
+                        <input type="date" id="occ-date" class="w-full px-4 py-3 rounded-lg border" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Description</label>
+                        <textarea id="occ-description" class="w-full px-4 py-3 rounded-lg border" rows="3"></textarea>
+                    </div>
+                    <div class="mb-4" id="occ-color-row">
+                        <label class="block text-sm font-medium mb-2">Color</label>
+                        <input type="color" id="occ-color" value="#3b82f6" class="w-12 h-8 p-0 border-0">
+                        <span class="text-xs text-gray-500 ml-2">Red is reserved for global events</span>
+                    </div>
+                    <div class="flex gap-4">
+                        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium flex-1" id="occ-submit-btn">Add Occurrence</button>
+                        <button type="button" id="cancel-occ-btn" class="px-6 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 font-medium flex-1">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+            <!-- Occurrence/Event Detail Modal -->
+    <div id="detail-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-full h-full max-w-none max-h-none m-4 flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+              <h3 id="detail-title" class="text-xl font-bold"></h3>
+              <div class="flex items-center gap-2">
+                <button id="edit-occurrence-btn" class="text-blue-500 hover:text-blue-700 text-lg" title="Edit">✏️</button>
+                <button id="delete-occurrence-btn" class="text-red-500 hover:text-red-700 text-lg" title="Delete">🗑️</button>
+                <button id="close-detail-btn" class="text-gray-400 hover:text-gray-700 dark:hover:text-white text-2xl">&times;</button>
+              </div>
+            </div>
+            <div id="detail-date" class="text-gray-500 dark:text-gray-400 mb-4"></div>
+            <div id="detail-description" class="text-gray-700 dark:text-gray-300 mb-4"></div>
+            
+                         <!-- Messages Section -->
+             <div class="flex-1 overflow-y-auto mb-4">
+               <h4 class="font-semibold mb-2">Messages</h4>
+               <div id="detail-messages" class="space-y-3 overflow-y-auto p-3 bg-gray-50 dark:bg-gray-700 rounded-lg" style="max-height: calc(100vh - 300px);"></div>
+             </div>
+            
+            <!-- Add Message Form -->
+            <form id="detail-message-form" class="flex gap-2 mt-2">
+              <div class="flex-1 relative">
+                <textarea id="detail-message-input" rows="2" class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none pr-10" placeholder="Type a message..." required></textarea>
+                <button type="button" id="detail-file-upload-btn" class="absolute right-2 top-2 text-gray-500 hover:text-blue-500 text-lg" title="Attach file">
+                  📎
+                </button>
+                <input type="file" id="detail-file-upload" class="hidden" multiple>
+              </div>
+              <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium self-end">Send</button>
+            </form>
+          </div>
+        </div>
+    </div>
+
+    <!-- Edit Timeline Modal -->
+    <div id="edit-timeline-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md">
+        <h3 class="text-xl font-bold mb-4">Edit Timeline</h3>
+        <form id="edit-timeline-form">
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Title</label>
+            <input type="text" id="edit-timeline-title" class="w-full px-4 py-3 rounded-lg border" required>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Description</label>
+            <textarea id="edit-timeline-description" class="w-full px-4 py-3 rounded-lg border" rows="3"></textarea>
+          </div>
+          <div class="mb-4 flex gap-4 items-center">
+            <div class="flex-1">
+              <label class="block text-sm font-medium mb-2">Start Date</label>
+              <input type="date" id="edit-timeline-start-date" class="w-full px-4 py-3 rounded-lg border" required>
+            </div>
+            <div class="flex-1">
+              <label class="block text-sm font-medium mb-2">End Date</label>
+              <input type="date" id="edit-timeline-end-date" class="w-full px-4 py-3 rounded-lg border">
+            </div>
+            <div class="flex flex-col items-center mt-6">
+              <label class="text-xs mb-1">Present</label>
+              <input type="checkbox" id="edit-timeline-present">
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium flex-1">Save</button>
+            <button type="button" id="cancel-edit-timeline-btn" class="px-6 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 font-medium flex-1">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Edit Occurrence Modal -->
+    <div id="edit-occurrence-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md">
+        <h3 class="text-xl font-bold mb-4">Edit Occurrence</h3>
+        <form id="edit-occurrence-form">
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Title</label>
+            <input type="text" id="edit-occurrence-title" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white" required>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Date</label>
+            <input type="date" id="edit-occurrence-date" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white" required>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Description</label>
+            <textarea id="edit-occurrence-description" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white" rows="3"></textarea>
+          </div>
+          <div class="flex gap-4">
+            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium flex-1">Save</button>
+            <button type="button" id="cancel-edit-occurrence-btn" class="px-6 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 font-medium flex-1">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Edit Event Modal (reuse occ-modal) -->
+    <div id="edit-event-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md">
+        <h3 id="edit-event-modal-title" class="text-xl font-bold mb-4">Edit Event</h3>
+        <form id="edit-event-form">
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Title</label>
+            <input type="text" id="edit-event-title" class="w-full px-4 py-3 rounded-lg border" required>
+          </div>
+          <div class="mb-4">
+            <label class="text-sm font-medium mb-2">Date</label>
+            <input type="date" id="edit-event-date" class="w-full px-4 py-3 rounded-lg border" required>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Description</label>
+            <textarea id="edit-event-description" class="w-full px-4 py-3 rounded-lg border" rows="3"></textarea>
+          </div>
+          <div class="flex gap-4">
+            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium flex-1">Save</button>
+            <button type="button" id="cancel-edit-event-btn" class="px-6 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 font-medium flex-1">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Image Viewer Modal -->
+    <div id="image-viewer-modal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 hidden">
+      <div class="relative max-w-full max-h-full p-4">
+        <button id="close-image-viewer" class="absolute top-4 right-4 text-white text-3xl hover:text-gray-300 z-10">&times;</button>
+        <img id="fullscreen-image" src="" alt="" class="max-w-full max-h-full object-contain" />
+      </div>
+    </div>
+
+    <!-- Manage Global Events Modal -->
+    <div id="manage-global-events-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-lg">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold">Manage Global Events</h3>
+          <button id="close-manage-global-events-btn" class="text-gray-400 hover:text-gray-700 dark:hover:text-white text-2xl">&times;</button>
+        </div>
+        <div id="global-events-list" class="space-y-4 max-h-96 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global functions that need to be available to event handlers
+        window.showTooltip = function(e, content) {
+            console.log('showTooltip called with:', content);
+            const tooltip = document.getElementById('timeline-tooltip');
+            console.log('Tooltip element:', tooltip);
+            if (!tooltip) {
+                console.error('Tooltip element not found!');
+                return;
+            }
+            tooltip.innerHTML = content;
+            tooltip.classList.remove('hidden');
+            // Position tooltip near mouse, but not off screen
+            let x = e.clientX + 16;
+            let y = e.clientY + 16;
+            if (x + 250 > window.innerWidth) x = window.innerWidth - 250;
+            if (y + 100 > window.innerHeight) y = window.innerHeight - 100;
+            tooltip.style.left = x + 'px';
+            tooltip.style.top = y + 'px';
+        };
+        
+        window.hideTooltip = function() {
+            const tooltip = document.getElementById('timeline-tooltip');
+            if (tooltip) {
+                tooltip.classList.add('hidden');
+            }
+        };
+        
+        window.openDetailModal = function(ev, type) {
+            console.log('openDetailModal called with:', ev, type);
+            
+            // Store the current occurrence for editing/deleting
+            currentEditingOccurrence = ev;
+            
+            document.getElementById('detail-title').textContent = ev.title;
+            
+            // Set date
+            if (type === 'event') {
+                document.getElementById('detail-date').textContent = formatDateMMDDYYYY(ev.date);
+            } else if (type === 'span') {
+                document.getElementById('detail-date').textContent = `${formatDateMMDDYYYY(ev.startDate)} → ${formatDateMMDDYYYY(ev.endDate)}`;
+            } else {
+                document.getElementById('detail-date').textContent = formatDateMMDDYYYY(ev.date || ev.startDate);
+            }
+            
+            // Set description
+            document.getElementById('detail-description').textContent = ev.description || 'No description';
+            
+            document.getElementById('detail-modal').classList.remove('hidden');
+            document.getElementById('detail-message-input').value = '';
+            document.getElementById('detail-message-form').dataset.msgId = ev.id;
+            if (window.renderDetailMessages) window.renderDetailMessages(ev.id);
+            if (window.renderDetailFiles) window.renderDetailFiles(ev.id);
+        };
+        
+                window.formatFileSize = function(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        };
+        
+        window.formatTime = function(date) {
+            if (!(date instanceof Date)) date = new Date(date);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        };
+        
+        // App state
+        let currentView = 'dashboard';
+        let selectedTimeline = null;
+        let darkMode = false;
+        let detailMessages = {};
+        let detailFiles = {};
+        let currentEditingOccurrence = null;
+        
+        // Global functions
+        window.renderDetailMessages = function(id) {
+          const container = document.getElementById('detail-messages');
+          if (!container) {
+            console.error('detail-messages container not found');
+            return;
+          }
+          const msgs = detailMessages[id] || [];
+          const files = detailFiles[id] || [];
+          
+          // Combine messages and files, sort by timestamp
+          const allItems = [];
+          
+          // Add text messages
+          msgs.forEach((msg, idx) => {
+            allItems.push({
+              type: 'message',
+              data: msg,
+              index: idx,
+              timestamp: msg.time
+            });
+          });
+          
+          // Add file uploads
+          files.forEach((file, idx) => {
+            allItems.push({
+              type: 'file',
+              data: file,
+              index: idx,
+              timestamp: new Date(file.timestamp || Date.now())
+            });
+          });
+          
+          // Sort by timestamp
+          allItems.sort((a, b) => a.timestamp - b.timestamp);
+          
+          container.innerHTML = allItems.map(item => {
+            if (item.type === 'message') {
+              const m = item.data;
+              return `
+                <div class="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm group relative">
+                  <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">U</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="font-medium text-gray-900 dark:text-white">User</span>
+                      <span class="text-xs text-gray-500 dark:text-gray-400">${window.formatTime ? window.formatTime(m.time) : new Date(m.time).toLocaleTimeString()}</span>
+                    </div>
+                    <div class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">${m.text}</div>
+                  </div>
+                  <button class="absolute right-2 top-2 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-opacity text-sm" onclick="deleteDetailMessage('${id}', ${item.index})" title="Delete message">🗑️</button>
+                </div>
+              `;
+            } else {
+              const file = item.data;
+              const fileType = file.type || '';
+              const fileName = file.name || '';
+              const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
+              
+              // Determine file type and create appropriate viewer
+              let fileContent = '';
+              
+              if (fileType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension)) {
+                // Image viewer
+                fileContent = `
+                  <div class="mt-2">
+                    <img src="${file.url}" alt="${fileName}" class="max-w-full max-h-64 rounded-lg cursor-pointer hover:opacity-90 transition-opacity" 
+                         onclick="openImageViewer('${file.url}', '${fileName}')" />
+                  </div>
+                `;
+              } else if (fileType.startsWith('video/') || ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv'].includes(fileExtension)) {
+                // Enhanced video player with better format support and debugging
+                const videoId = `video-${id}-${item.index}`;
+                fileContent = `
+                  <div class="mt-2">
+                    <div class="relative">
+                      <video id="${videoId}" class="max-w-full max-h-64 rounded-lg" preload="metadata" controls 
+                             onloadedmetadata="console.log('Video metadata loaded for ${videoId}')"
+                             onerror="console.error('Video error for ${videoId}:', this.error)"
+                             onloadstart="console.log('Video loading started for ${videoId}')"
+                             oncanplay="console.log('Video can play for ${videoId}')">
+                        <source src="${file.url}" type="${fileType}">
+                        <source src="${file.url}" type="video/mp4">
+                        <source src="${file.url}" type="video/webm">
+                        <source src="${file.url}" type="video/ogg">
+                        <p class="text-red-500 text-sm mt-2">Your browser does not support video playback. 
+                           <a href="${file.url}" target="_blank" class="text-blue-500 underline">Download video</a>
+                        </p>
+                      </video>
+                      <div class="mt-2 flex items-center gap-2 text-sm">
+                        <button onclick="toggleVideoPlay('${videoId}')" class="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Play/Pause</button>
+                        <label class="text-xs">Volume:</label>
+                        <input type="range" min="0" max="1" step="0.1" value="1" 
+                               onchange="setVideoVolume('${videoId}', this.value)" 
+                               class="w-16 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                        <label class="text-xs">Speed:</label>
+                        <select onchange="setVideoSpeed('${videoId}', this.value)" class="text-xs border rounded px-1">
+                          <option value="0.5">0.5x</option>
+                          <option value="0.75">0.75x</option>
+                          <option value="1" selected>1x</option>
+                          <option value="1.25">1.25x</option>
+                          <option value="1.5">1.5x</option>
+                          <option value="2">2x</option>
+                        </select>
+                        <button onclick="toggleVideoFullscreen('${videoId}')" class="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600">Fullscreen</button>
+                        <button onclick="downloadVideo('${file.url}', '${fileName}')" class="px-2 py-1 bg-purple-500 text-white rounded hover:bg-purple-600">Download</button>
+                      </div>
+                      <div class="text-xs text-gray-500 mt-1">
+                        Format: ${fileType} | File: ${fileName}
+                      </div>
+                    </div>
+                  </div>
+                `;
+              } else if (fileType.startsWith('audio/') || ['mp3', 'wav', 'ogg', 'm4a'].includes(fileExtension)) {
+                // Audio player
+                fileContent = `
+                  <div class="mt-2">
+                    <audio controls class="w-full">
+                      <source src="${file.url}" type="${fileType}">
+                      Your browser does not support the audio tag.
+                    </audio>
+                  </div>
+                `;
+              } else if (fileType.includes('pdf')) {
+                // PDF viewer
+                fileContent = `
+                  <div class="mt-2">
+                    <iframe src="${file.url}" class="w-full h-64 border rounded-lg" frameborder="0"></iframe>
+                  </div>
+                `;
+              } else {
+                // Generic file
+                fileContent = `
+                  <div class="mt-2 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                    <div class="flex items-center gap-2">
+                      <span class="text-2xl">📄</span>
+                      <div>
+                        <div class="font-medium">${fileName}</div>
+                        <div class="text-sm text-gray-500">${window.formatFileSize ? window.formatFileSize(file.size) : file.size + ' bytes'}</div>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }
+              
+              return `
+                <div class="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm group relative">
+                  <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm flex-shrink-0">📎</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="font-medium text-gray-900 dark:text-white">File Upload</span>
+                      <span class="text-xs text-gray-500 dark:text-gray-400">${window.formatTime ? window.formatTime(file.timestamp || new Date()) : new Date(file.timestamp || Date.now()).toLocaleTimeString()}</span>
+                    </div>
+                    <div class="text-gray-700 dark:text-gray-300">${fileName}</div>
+                    <div class="text-sm text-gray-500">${window.formatFileSize ? window.formatFileSize(file.size) : file.size + ' bytes'}</div>
+                    ${fileContent}
+                  </div>
+                  <button class="absolute right-2 top-2 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-opacity text-sm" onclick="deleteDetailFile('${id}', ${item.index})" title="Delete file">🗑️</button>
+                </div>
+              `;
+            }
+          }).join('');
+        };
+        
+        window.renderDetailFiles = function(id) {
+          // Files are now shown in the main messages area
+          window.renderDetailMessages(id);
+        };
+        
+        window.deleteDetailMessage = function(id, idx) {
+          if (!detailMessages[id]) return;
+          detailMessages[id].splice(idx, 1);
+          window.renderDetailMessages(id);
+        };
+        
+        window.deleteDetailFile = function(id, idx) {
+            if (!detailFiles[id]) return;
+            detailFiles[id].splice(idx, 1);
+            window.renderDetailFiles(id);
+        };
+        
+        // Image viewer functions
+        window.openImageViewer = function(imageUrl, imageName) {
+            const modal = document.getElementById('image-viewer-modal');
+            const image = document.getElementById('fullscreen-image');
+            image.src = imageUrl;
+            image.alt = imageName;
+            modal.classList.remove('hidden');
+        };
+        
+        // Close image viewer
+        const closeImageViewer = document.getElementById('close-image-viewer');
+        if (closeImageViewer) {
+            closeImageViewer.addEventListener('click', function() {
+                document.getElementById('image-viewer-modal').classList.add('hidden');
+            });
+        }
+        
+        // Close image viewer with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.getElementById('image-viewer-modal').classList.add('hidden');
+            }
+        });
+        
+        // Video control functions
+        window.toggleVideoPlay = function(videoId) {
+            const video = document.getElementById(videoId);
+            if (video.paused) {
+                video.play().catch(e => {
+                    console.log('Video play failed:', e);
+                    alert('Video playback failed. This might be due to codec issues. Try downloading the video instead.');
+                });
+            } else {
+                video.pause();
+            }
+        };
+
+        window.downloadVideo = function(url, filename) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+        
+        window.setVideoVolume = function(videoId, volume) {
+            const video = document.getElementById(videoId);
+            video.volume = volume;
+        };
+        
+        window.setVideoSpeed = function(videoId, speed) {
+            const video = document.getElementById(videoId);
+            video.playbackRate = parseFloat(speed);
+        };
+        
+        window.toggleVideoFullscreen = function(videoId) {
+            const video = document.getElementById(videoId);
+            if (video.requestFullscreen) {
+                video.requestFullscreen();
+            } else if (video.webkitRequestFullscreen) {
+                video.webkitRequestFullscreen();
+            } else if (video.msRequestFullscreen) {
+                video.msRequestFullscreen();
+            }
+        };
+        
+        // Helper: Format date as MM/DD/YYYY
+        function formatDateMMDDYYYY(dateStr) {
+            if (!dateStr) return '';
+            // Accepts both 'YYYY-MM-DD' and 'Wed, 01 Jan 2025 00:00:00 GMT'
+            let d = new Date(dateStr);
+            if (!isNaN(d)) {
+                return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
+            }
+            // fallback: just return the string
+            return dateStr;
+        }
+
+        // Helper: Convert date to days since January 1, 0001
+        function dateToDays(dateStr) {
+            if (!dateStr) return 0;
+            
+            // Handle different date formats
+            let year, month, day;
+            if (dateStr.includes('/')) {
+                // MM/DD/YYYY format
+                const parts = dateStr.split('/');
+                month = parseInt(parts[0]) - 1; // JS months are 0-indexed
+                day = parseInt(parts[1]);
+                year = parseInt(parts[2]);
+            } else {
+                // YYYY-MM-DD format
+                const date = new Date(dateStr);
+                year = date.getFullYear();
+                month = date.getMonth();
+                day = date.getDate();
+            }
+            
+            // Calculate days since January 1, 0001
+            let totalDays = 0;
+            
+            // Add days from years
+            for (let y = 1; y < year; y++) {
+                totalDays += isLeapYear(y) ? 366 : 365;
+            }
+            
+            // Add days from months in current year
+            const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+            for (let m = 0; m < month; m++) {
+                totalDays += daysInMonth[m];
+                // Add leap day if February in leap year
+                if (m === 1 && isLeapYear(year)) {
+                    totalDays += 1;
+                }
+            }
+            
+            // Add days in current month
+            totalDays += day;
+            
+            return totalDays;
+        }
+        
+        // Helper: Check if year is leap year
+        function isLeapYear(year) {
+            return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+        }
+
+        // API base URL
+        const API_BASE = window.location.origin;
+        
+        // Data storage
+        let timelines = [];
+        
+
+        let occMode = 'occurrence'; // or 'event'
+        let occTimelineId = null;
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOMContentLoaded fired');
+            setupEventListeners();
+            loadData();
+            
+            // Check video format support
+            checkVideoSupport();
+        });
+
+        // Check what video formats the browser supports
+        function checkVideoSupport() {
+            const video = document.createElement('video');
+            const formats = [
+                { type: 'video/mp4', codec: 'avc1.42E01E' },
+                { type: 'video/webm', codec: 'vp8' },
+                { type: 'video/ogg', codec: 'theora' }
+            ];
+            
+            console.log('Checking video format support:');
+            formats.forEach(format => {
+                const canPlay = video.canPlayType(`${format.type}; codecs="${format.codec}"`);
+                console.log(`${format.type} (${format.codec}): ${canPlay}`);
+            });
+        }
+
+        // Load data from Flask backend
+        async function loadData() {
+            try {
+                console.log('Loading data...');
+                console.log('API_BASE:', API_BASE);
+                // Load timelines
+                const timelinesResponse = await fetch(`${API_BASE}/timelines`, {
+                    credentials: 'include'
+                });
+                console.log('Timelines response status:', timelinesResponse.status);
+                const dbTimelines = await timelinesResponse.json();
+                console.log('Loaded timelines:', dbTimelines);
+                
+                // Convert database field names to frontend format and format dates
+                timelines = dbTimelines.map(t => {
+                    console.log('Processing timeline:', t);
+                    console.log('start_date:', t.start_date, 'type:', typeof t.start_date);
+                    console.log('end_date:', t.end_date, 'type:', typeof t.end_date);
+                    
+                    return {
+                        ...t,
+                        startDate: formatDateMMDDYYYY(t.start_date),
+                        endDate: formatDateMMDDYYYY(t.end_date),
+                        occurrences: [] // We'll load these separately
+                    };
+                });
+                
+                // Load occurrences for each timeline
+                for (let timeline of timelines) {
+                    try {
+                        const occurrencesResponse = await fetch(`${API_BASE}/occurrences`, {
+                            credentials: 'include'
+                        });
+                        const dbOccurrences = await occurrencesResponse.json();
+                        
+                        // Filter occurrences for this timeline and convert field names
+                        timeline.occurrences = dbOccurrences
+                            .filter(occ => occ.timeline_id === timeline.id)
+                            .map(occ => ({
+                                ...occ,
+                                date: occ.date ? formatDateMMDDYYYY(occ.date) : null,
+                                startDate: occ.start_date ? formatDateMMDDYYYY(occ.start_date) : null,
+                                endDate: occ.end_date ? formatDateMMDDYYYY(occ.end_date) : null,
+                                span: occ.is_span // Convert is_span to span for frontend
+                            }));
+                    } catch (error) {
+                        console.error(`Error loading occurrences for timeline ${timeline.id}:`, error);
+                        timeline.occurrences = [];
+                    }
+                }
+                
+
+                
+                console.log('Rendering timelines...');
+                renderTimelines();
+                showView('dashboard');
+            } catch (error) {
+                console.error('Error loading data:', error);
+                // Fallback to empty arrays if API fails
+                timelines = [];
+                renderTimelines();
+                showView('dashboard');
+            }
+        }
+
+        // Save timeline to backend
+        async function saveTimeline(timeline) {
+            try {
+                const response = await fetch(`${API_BASE}/timelines`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(timeline)
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error saving timeline:', error);
+                return null;
+            }
+        }
+
+        // Save occurrence to backend
+        async function saveOccurrence(occurrence) {
+            try {
+                const response = await fetch(`${API_BASE}/occurrences`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(occurrence)
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error saving occurrence:', error);
+                return null;
+            }
+        }
+
+
+
+        function setupEventListeners() {
+            document.getElementById('new-timeline-btn').addEventListener('click', () => showView('create-timeline'));
+            document.getElementById('create-timeline-btn').addEventListener('click', createTimeline);
+            document.getElementById('cancel-create-btn').addEventListener('click', () => showView('dashboard'));
+            document.getElementById('add-event-btn').addEventListener('click', () => showModal(true));
+            document.getElementById('add-first-event-btn').addEventListener('click', () => showModal(true));
+            document.getElementById('save-event-btn').addEventListener('click', addEvent);
+            document.getElementById('cancel-event-btn').addEventListener('click', () => showModal(false));
+            document.getElementById('back-btn').addEventListener('click', () => showView('dashboard'));
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+
+            // Close modal when clicking outside
+            document.getElementById('add-event-modal').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('add-event-modal')) {
+                    showModal(false);
+                }
+            });
+            
+                    // Detail modal controls
+        const closeDetailBtn = document.getElementById('close-detail-btn');
+        if (closeDetailBtn) {
+            closeDetailBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                document.getElementById('detail-modal').classList.add('hidden');
+            });
+        }
+        
+        // Prevent modal from closing when clicking inside it
+        const detailModal = document.getElementById('detail-modal');
+        if (detailModal) {
+            detailModal.addEventListener('click', function(e) {
+                if (e.target === detailModal) {
+                    detailModal.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Prevent form submission from closing modal
+        const detailMessageForm = document.getElementById('detail-message-form');
+        if (detailMessageForm) {
+            detailMessageForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const id = this.dataset.msgId;
+                const text = document.getElementById('detail-message-input').value.trim();
+                if (!text) return;
+                
+                if (!detailMessages[id]) detailMessages[id] = [];
+                detailMessages[id].push({ text, time: new Date() });
+                document.getElementById('detail-message-input').value = '';
+                window.renderDetailMessages(id);
+                
+                // Scroll to bottom
+                const container = document.getElementById('detail-messages');
+                container.scrollTop = container.scrollHeight;
+            });
+        }
+            
+            // Edit occurrence functionality
+            const editOccurrenceBtn = document.getElementById('edit-occurrence-btn');
+            if (editOccurrenceBtn) {
+                editOccurrenceBtn.addEventListener('click', function() {
+                    if (!currentEditingOccurrence) return;
+                    
+                    // Populate edit form
+                    document.getElementById('edit-occurrence-title').value = currentEditingOccurrence.title;
+                    document.getElementById('edit-occurrence-date').value = currentEditingOccurrence.date;
+                    document.getElementById('edit-occurrence-description').value = currentEditingOccurrence.description || '';
+                    
+                    // Show edit modal
+                    document.getElementById('edit-occurrence-modal').classList.remove('hidden');
+                });
+            }
+            
+            const cancelEditOccurrenceBtn = document.getElementById('cancel-edit-occurrence-btn');
+            if (cancelEditOccurrenceBtn) {
+                cancelEditOccurrenceBtn.addEventListener('click', function() {
+                    document.getElementById('edit-occurrence-modal').classList.add('hidden');
+                });
+            }
+            
+            const editOccurrenceForm = document.getElementById('edit-occurrence-form');
+            if (editOccurrenceForm) {
+                editOccurrenceForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    if (!currentEditingOccurrence) return;
+                    
+                    const title = document.getElementById('edit-occurrence-title').value.trim();
+                    const date = document.getElementById('edit-occurrence-date').value;
+                    const description = document.getElementById('edit-occurrence-description').value.trim();
+                    
+                    if (!title || !date) {
+                        alert('Title and date are required.');
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch(`${API_BASE}/occurrences/${currentEditingOccurrence.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({ title, date, description })
+                        });
+                        
+                        if (response.ok) {
+                            // Update the occurrence in the current timeline
+                            const timeline = timelines.find(t => t.id === currentEditingOccurrence.timeline_id);
+                            if (timeline) {
+                                const occurrence = timeline.occurrences.find(o => o.id === currentEditingOccurrence.id);
+                                if (occurrence) {
+                                    occurrence.title = title;
+                                    occurrence.date = date;
+                                    occurrence.description = description;
+                                }
+                            }
+                            
+                            // Refresh the display
+                            renderTimelines();
+                            
+                            // Close modals
+                            document.getElementById('edit-occurrence-modal').classList.add('hidden');
+                            document.getElementById('detail-modal').classList.add('hidden');
+                            
+                            alert('Occurrence updated successfully!');
+                        } else {
+                            alert('Failed to update occurrence.');
+                        }
+                    } catch (error) {
+                        console.error('Error updating occurrence:', error);
+                        alert('Error updating occurrence.');
+                    }
+                });
+            }
+            
+            // Delete occurrence functionality
+            const deleteOccurrenceBtn = document.getElementById('delete-occurrence-btn');
+            if (deleteOccurrenceBtn) {
+                deleteOccurrenceBtn.addEventListener('click', async function() {
+                    if (!currentEditingOccurrence) return;
+                    
+                    if (!confirm('Are you sure you want to delete this occurrence?')) return;
+                    
+                    try {
+                        const response = await fetch(`${API_BASE}/occurrences/${currentEditingOccurrence.id}`, {
+                            method: 'DELETE',
+                            credentials: 'include'
+                        });
+                        
+                        if (response.ok) {
+                            // Remove the occurrence from the current timeline
+                            const timeline = timelines.find(t => t.id === currentEditingOccurrence.timeline_id);
+                            if (timeline) {
+                                timeline.occurrences = timeline.occurrences.filter(o => o.id !== currentEditingOccurrence.id);
+                            }
+                            
+                            // Refresh the display
+                            renderTimelines();
+                            
+                            // Close modal
+                            document.getElementById('detail-modal').classList.add('hidden');
+                            
+                            alert('Occurrence deleted successfully!');
+                        } else {
+                            alert('Failed to delete occurrence.');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting occurrence:', error);
+                        alert('Error deleting occurrence.');
+                    }
+                });
+            }
+            
+            // File upload handling
+            const detailFileUploadBtn = document.getElementById('detail-file-upload-btn');
+            if (detailFileUploadBtn) {
+                detailFileUploadBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    document.getElementById('detail-file-upload').click();
+                });
+            }
+            
+            const detailFileUpload = document.getElementById('detail-file-upload');
+            if (detailFileUpload) {
+                detailFileUpload.addEventListener('change', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const id = document.getElementById('detail-message-form').dataset.msgId;
+                    const files = Array.from(e.target.files);
+                    
+                    if (!detailFiles[id]) detailFiles[id] = [];
+                    
+                    files.forEach(file => {
+                        detailFiles[id].push({
+                            name: file.name,
+                            size: file.size,
+                            type: file.type,
+                            url: URL.createObjectURL(file),
+                            timestamp: new Date().toISOString()
+                        });
+                    });
+                    
+                    window.renderDetailFiles(id);
+                    e.target.value = ''; // Clear the input
+                });
+            }
+        }
+
+        function showView(view) {
+            console.log('showView called with:', view);
+            currentView = view;
+            
+            try {
+                document.getElementById('dashboard-view').classList.add('hidden');
+                document.getElementById('create-timeline-view').classList.add('hidden');
+                document.getElementById('timeline-view').classList.add('hidden');
+                
+                if (view === 'dashboard') {
+                    console.log('Showing dashboard view');
+                    document.getElementById('dashboard-view').classList.remove('hidden');
+                    document.getElementById('back-btn').classList.add('hidden');
+                    renderTimelines();
+                } else if (view === 'create-timeline') {
+                    console.log('Showing create timeline view');
+                    document.getElementById('create-timeline-view').classList.remove('hidden');
+                    document.getElementById('back-btn').classList.remove('hidden');
+                } else if (view === 'timeline') {
+                    console.log('Showing timeline view');
+                    document.getElementById('timeline-view').classList.remove('hidden');
+                    document.getElementById('back-btn').classList.remove('hidden');
+                    renderEvents();
+                }
+            } catch (error) {
+                console.error('Error in showView:', error);
+            }
+        }
+
+        function showModal(show) {
+            const modal = document.getElementById('add-event-modal');
+            if (show) {
+                modal.classList.remove('hidden');
+                clearEventForm();
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function renderTimelines() {
+                            console.log('renderTimelines called with', timelines.length, 'timelines');
+                console.log('Timelines data:', timelines);
+                const grid = document.getElementById('timelines-grid');
+                console.log('Grid element:', grid);
+                if (!grid) {
+                    console.error('timelines-grid element not found!');
+                    return;
+                }
+                if (timelines.length === 0) {
+                    console.log('No timelines, showing empty message');
+                    grid.innerHTML = '<div class="text-gray-500 dark:text-gray-400 col-span-full text-center">No timelines yet. Click "New Timeline" to get started.</div>';
+                    return;
+                }
+                
+                console.log('About to render', timelines.length, 'timelines');
+            // Use the grid's width for axisWidth
+            const gridRect = grid.getBoundingClientRect();
+            const axisWidth = Math.max(gridRect.width - 180, 300); // leave space for labels/buttons, min 300px
+            grid.innerHTML = timelines.map(timeline => {
+                const isPresent = timeline.endDate === 'present' || timeline.endDate === null;
+                const endDateForCalc = isPresent ? formatDateMMDDYYYY(new Date()) : timeline.endDate;
+                const start = dateToDays(timeline.startDate);
+                const end = dateToDays(endDateForCalc);
+                const total = end - start;
+                console.log(`Timeline "${timeline.title}": start=${timeline.startDate}(${start}), end=${endDateForCalc}(${end}), total=${total}`);
+                
+                // Render occurrences (dots)
+                const occurrences = (timeline.occurrences || []).filter(ev => !ev.span).map(ev => {
+                    const evDate = dateToDays(ev.date);
+                    const pos = Math.max(0, Math.min(((evDate - start) / total) * axisWidth, axisWidth));
+                    console.log(`  Occurrence "${ev.title}": date=${ev.date}(${evDate}), pos=${pos}px`);
+                    return `<div title="${ev.title}" class="absolute top-1/2 -translate-y-1/2" style="left:${pos}px">
+                        <div class="w-4 h-4 rounded-full border-2 border-white shadow cursor-pointer" style="background-color:#3b82f6"></div>
+                    </div>`;
+                }).join('');
+                // Render spans (bars)
+                const spans = (timeline.occurrences || []).filter(ev => ev.span).map(ev => {
+                    const spanStart = ((dateToDays(ev.startDate) - start) / total) * axisWidth;
+                    const spanEnd = ((dateToDays(ev.endDate) - start) / total) * axisWidth;
+                    const width = Math.max(spanEnd - spanStart, 8);
+                    return `<div title="${ev.title}" class="absolute top-1/2 -translate-y-1/2 h-3 rounded opacity-70" style="left:${spanStart}px; width:${width}px; background-color:#22c55e"></div>`;
+                }).join('');
+
+                return `
+  <div class="block w-full my-12">
+    <div class="flex flex-col items-center mb-4">
+      <div class="flex items-center gap-2 mb-2">
+        <div class="font-bold text-lg text-center">${timeline.title}</div>
+        <button onclick="deleteTimeline(${timeline.id})" title="Delete Timeline" class="p-2 rounded hover:bg-red-100 dark:hover:bg-red-900"><span style="color:#ef4444; font-size:1.2em;">🗑️</span></button>
+        <button onclick="openEditTimelineModal(${timeline.id})" title="Edit Timeline" class="p-2 rounded hover:bg-blue-100 dark:hover:bg-blue-900"><span style="color:#2563eb; font-size:1.2em;">✏️</span></button>
+      </div>
+    </div>
+    <div style="position:relative; width:100vw; left:calc(-50vw + 50%); margin:0; padding:0;">
+      <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 w-full" style="margin:0; padding:0;">
+        <span class="whitespace-nowrap pl-2">${formatDateMMDDYYYY(timeline.startDate)}</span>
+        <div class="flex-1 h-0.5 bg-gray-300 dark:bg-gray-600 relative mx-2 axis-line"></div>
+        <span class="whitespace-nowrap pr-2">${isPresent ? 'Present' : formatDateMMDDYYYY(timeline.endDate)}</span>
+                        </div>
+                    </div>
+    <div class="flex justify-center gap-4 mt-4">
+      <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium" onclick="promptAddOccurrence(${timeline.id})">+ Add Occurrence</button>
+      <button class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium" onclick="promptAddSpan(${timeline.id})">+ Add Span</button>
+    </div>
+                </div>
+`;
+            }).join('');
+
+            // After rendering all timelines, use JavaScript to place the dots and spans
+            setTimeout(() => {
+                document.querySelectorAll('.axis-line').forEach((axis, i) => {
+                    // Remove any old dots/spans
+                    axis.querySelectorAll('.dot, .span, .global-dot').forEach(el => el.remove());
+
+                    const axisWidth = axis.getBoundingClientRect().width;
+                    const timeline = timelines[i];
+                    const start = dateToDays(timeline.startDate);
+                    const end = dateToDays(timeline.endDate);
+                    const total = end - start;
+
+                    // Occurrences
+                    (timeline.occurrences || []).filter(ev => !ev.span).forEach(ev => {
+                        const pos = ((dateToDays(ev.date) - start) / total) * axisWidth;
+                        console.log(`Creating occurrence dot for "${ev.title}" at position ${pos}px`);
+                        const dot = document.createElement('div');
+                        dot.className = 'dot absolute top-1/2 -translate-y-1/2';
+                        dot.style.left = `${pos}px`;
+                        dot.innerHTML = `<div class="w-4 h-4 rounded-full border-2 border-white shadow cursor-pointer" style="background-color:#3b82f6"></div>`;
+                        axis.appendChild(dot);
+                        dot.onmouseenter = function(e) {
+                            this.firstChild.style.boxShadow = '0 0 0 4px #60a5fa55';
+                            showTooltip(e, `<div><b>${ev.title}</b></div><div>${formatDateMMDDYYYY(ev.date)}</div><div>${ev.description || ''}</div>`);
+                        };
+                        dot.onmousemove = function(e) { showTooltip(e, `<div><b>${ev.title}</b></div><div>${formatDateMMDDYYYY(ev.date)}</div><div>${ev.description || ''}</div>`); };
+                        dot.onmouseleave = function() {
+                            this.firstChild.style.boxShadow = '';
+                            hideTooltip();
+                        };
+                        dot.onclick = function() { 
+                            console.log('Occurrence clicked:', ev);
+                            openDetailModal(ev, 'occurrence'); 
+                        };
+                    });
+
+                    // Spans
+                    (timeline.occurrences || []).filter(ev => ev.span).forEach(ev => {
+                        const spanStart = ((dateToDays(ev.startDate) - start) / total) * axisWidth;
+                        const spanEnd = ((dateToDays(ev.endDate) - start) / total) * axisWidth;
+                        const width = Math.max(spanEnd - spanStart, 8);
+                        const span = document.createElement('div');
+                        span.className = 'span absolute top-1/2 -translate-y-1/2 h-3 rounded opacity-70';
+                        span.style.left = `${spanStart}px`;
+                        span.style.width = `${width}px`;
+                        span.style.backgroundColor = '#22c55e';
+                        axis.appendChild(span);
+                        span.onmouseenter = function(e) {
+                            this.style.boxShadow = '0 0 0 4px #22c55e55';
+                            showTooltip(e, `<div><b>${ev.title}</b></div><div>${formatDateMMDDYYYY(ev.startDate)} → ${formatDateMMDDYYYY(ev.endDate)}</div><div>${ev.description || ''}</div>`);
+                        };
+                        span.onmousemove = function(e) { showTooltip(e, `<div><b>${ev.title}</b></div><div>${formatDateMMDDYYYY(ev.startDate)} → ${formatDateMMDDYYYY(ev.endDate)}</div><div>${ev.description || ''}</div>`); };
+                        span.onmouseleave = function() {
+                            this.style.boxShadow = '';
+                            hideTooltip();
+                        };
+                        span.onclick = function() { 
+                            console.log('Span clicked:', ev);
+                            openDetailModal(ev, 'span'); 
+                        };
+                    });
+
+
+                });
+            }, 0); // Use a small timeout to ensure DOM is rendered
+        }
+
+        function viewTimeline(id) {
+            selectedTimeline = timelines.find(t => t.id === id);
+            document.getElementById('timeline-title-display').textContent = selectedTimeline.title;
+            document.getElementById('timeline-description-display').textContent = selectedTimeline.description;
+            showView('timeline');
+        }
+
+        function renderEvents() {
+            const container = document.getElementById('events-container');
+            const empty = document.getElementById('empty-timeline');
+            
+            if (!selectedTimeline || selectedTimeline.occurrences.length === 0) {
+                container.classList.add('hidden');
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
+            empty.classList.add('hidden');
+
+            const sortedEvents = [...selectedTimeline.occurrences].sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            container.innerHTML = sortedEvents.map(event => `
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                                    ${formatDateMMDDYYYY(event.date)}
+                                </span>
+                            </div>
+                            <h3 class="text-xl font-semibold mb-2">${event.title}</h3>
+                            <p class="text-gray-700 dark:text-gray-300">${event.description}</p>
+                        </div>
+                        <div class="flex gap-2 ml-4">
+                            <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" onclick="openEditEventModal(${event.id}, 'occurrence')">✏️</button>
+                            <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-red-500" onclick="deleteEvent(${event.id}, 'occurrence')">🗑️</button>
+                        </div>
+                    </div>
+                    ${event.media ? `
+                        <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center gap-3">
+                            <span class="text-blue-500">📄</span>
+                            <span class="text-sm">${event.media.name}</span>
+                            <span class="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-600">${event.media.type}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        async function createTimeline() {
+            const title = document.getElementById('timeline-title').value.trim();
+            const description = document.getElementById('timeline-description').value.trim();
+            const startDate = document.getElementById('timeline-start-date').value;
+            const present = document.getElementById('timeline-present').checked;
+            const endDate = present ? null : document.getElementById('timeline-end-date').value;
+            
+            if (!title) {
+                alert('Please enter a timeline title');
+                return;
+            }
+            if (!startDate || (!present && !endDate)) {
+                alert('Please enter both start and end dates, or check Present.');
+                return;
+            }
+            const newTimeline = {
+                title,
+                description,
+                start_date: startDate,
+                end_date: endDate
+            };
+
+            const savedTimeline = await saveTimeline(newTimeline);
+            if (savedTimeline) {
+                // Convert the saved timeline to frontend format
+                const frontendTimeline = {
+                    ...savedTimeline,
+                    startDate: formatDateMMDDYYYY(savedTimeline.start_date),
+                    endDate: formatDateMMDDYYYY(savedTimeline.end_date),
+                    occurrences: []
+                };
+                timelines.push(frontendTimeline);
+                clearTimelineForm();
+                showView('dashboard');
+                renderTimelines();
+            } else {
+                alert('Failed to create timeline. Please try again.');
+            }
+        }
+
+        function addEvent() {
+            const date = document.getElementById('event-date').value;
+            const title = document.getElementById('event-title').value.trim();
+            const description = document.getElementById('event-description').value.trim();
+
+            if (!date || !title) {
+                alert('Please fill in the date and event title');
+                return;
+            }
+
+            const newEvent = {
+                id: Date.now(),
+                date,
+                title,
+                description,
+                media: null
+            };
+
+            selectedTimeline.occurrences.push(newEvent);
+            // Update the timeline in the main array
+            const timelineIndex = timelines.findIndex(t => t.id === selectedTimeline.id);
+            if (timelineIndex !== -1) {
+                timelines[timelineIndex] = selectedTimeline;
+            }
+            
+            showModal(false);
+            renderEvents();
+        }
+
+        function clearTimelineForm() {
+            document.getElementById('timeline-title').value = '';
+            document.getElementById('timeline-description').value = '';
+            document.getElementById('timeline-start-date').value = '';
+            document.getElementById('timeline-end-date').value = '';
+            document.getElementById('timeline-present').checked = false; // Reset present checkbox
+        }
+
+        function clearEventForm() {
+            document.getElementById('event-date').value = '';
+            document.getElementById('event-title').value = '';
+            document.getElementById('event-description').value = '';
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function toggleTheme() {
+            darkMode = !darkMode;
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('theme-toggle');
+            
+            if (darkMode) {
+                html.classList.add('dark');
+                document.body.classList.remove('bg-gray-50', 'text-gray-900');
+                document.body.classList.add('bg-gray-900', 'text-white');
+                themeIcon.textContent = '☀️';
+            } else {
+                html.classList.remove('dark');
+                document.body.classList.remove('bg-gray-900', 'text-white');
+                document.body.classList.add('bg-gray-50', 'text-gray-900');
+                themeIcon.textContent = '🌙';
+            }
+        }
+
+        // Prompt user for occurrence or span
+        function promptAddOccurrence(timelineId) {
+            openOccurrenceModal(timelineId);
+        }
+        function promptAddSpan(timelineId) {
+            const timeline = timelines.find(t => t.id === timelineId);
+            if (!timeline) return;
+            openSpanModal(timeline);
+        }
+
+        function openSpanModal(timeline) {
+            document.getElementById('span-modal').classList.remove('hidden');
+            document.getElementById('span-title').value = '';
+            document.getElementById('span-description').value = '';
+            document.getElementById('span-start-date').value = '';
+            document.getElementById('span-end-date').value = '';
+            document.getElementById('span-color').value = '#22c55e';
+            // Set min/max for date pickers
+            document.getElementById('span-start-date').min = timeline.startDate;
+            document.getElementById('span-start-date').max = timeline.endDate;
+            document.getElementById('span-end-date').min = timeline.startDate;
+            document.getElementById('span-end-date').max = timeline.endDate;
+            // Store timeline id for submit
+            document.getElementById('span-form').dataset.timelineId = timeline.id;
+        }
+
+        function openOccurrenceModal(timelineId) {
+            occMode = 'occurrence';
+            occTimelineId = timelineId;
+            document.getElementById('occ-modal-title').textContent = 'Add New Occurrence';
+            document.getElementById('occ-submit-btn').textContent = 'Add Occurrence';
+            document.getElementById('occ-color-row').classList.remove('hidden');
+            document.getElementById('occ-color').value = '#3b82f6'; // Default color for occurrences
+            document.getElementById('occ-title').value = '';
+            document.getElementById('occ-date').value = '';
+            document.getElementById('occ-description').value = '';
+            document.getElementById('occ-modal').classList.remove('hidden');
+        }
+
+        function openEventModal() {
+            occMode = 'event';
+            occTimelineId = null;
+            document.getElementById('occ-modal-title').textContent = 'Add New Event';
+            document.getElementById('occ-submit-btn').textContent = 'Add Event';
+            document.getElementById('occ-color-row').classList.add('hidden');
+            document.getElementById('occ-color').value = '#ef4444'; // red
+            document.getElementById('occ-title').value = '';
+            document.getElementById('occ-date').value = '';
+            document.getElementById('occ-description').value = '';
+            document.getElementById('occ-modal').classList.remove('hidden');
+        }
+
+        document.getElementById('span-form').onsubmit = async function(e) {
+            e.preventDefault();
+            const timelineId = this.dataset.timelineId;
+            const timeline = timelines.find(t => t.id == timelineId);
+            const title = document.getElementById('span-title').value.trim();
+            const description = document.getElementById('span-description').value.trim();
+            const startDate = document.getElementById('span-start-date').value;
+            const endDate = document.getElementById('span-end-date').value;
+            const color = document.getElementById('span-color').value;
+            if (!title || !startDate || !endDate) return alert('All fields required.');
+            
+            // Validate span dates using the new date system
+            const timelineStart = dateToDays(timeline.startDate);
+            const timelineEnd = dateToDays(timeline.endDate);
+            const spanStart = dateToDays(startDate);
+            const spanEnd = dateToDays(endDate);
+            
+            if (spanStart < timelineStart || spanEnd > timelineEnd) {
+                return alert('Span must be within the timeline\'s date range.');
+            }
+            if (spanStart >= spanEnd) {
+                return alert('Span start date must be before end date.');
+            }
+            
+            const span = {
+                timeline_id: timelineId,
+                title,
+                description,
+                start_date: startDate,
+                end_date: endDate,
+                is_span: true
+            };
+            
+            const savedSpan = await saveOccurrence(span);
+            if (savedSpan) {
+                timeline.occurrences.push(savedSpan);
+                document.getElementById('span-modal').classList.add('hidden');
+                renderTimelines();
+            } else {
+                alert('Failed to save span. Please try again.');
+            }
+        };
+        document.getElementById('cancel-span-btn').onclick = function() {
+            document.getElementById('span-modal').classList.add('hidden');
+        };
+
+        document.getElementById('occ-form').onsubmit = async function(e) {
+            e.preventDefault();
+            const title = document.getElementById('occ-title').value.trim();
+            const date = document.getElementById('occ-date').value;
+            const description = document.getElementById('occ-description').value.trim();
+            let color = document.getElementById('occ-color').value;
+            if (!title || !date) return alert('Title and date required.');
+            
+            if (occMode === 'occurrence') {
+                if (color.toLowerCase() === '#ef4444' || color.toLowerCase() === '#ff0000') {
+                    return alert('Red is reserved for global events.');
+                }
+                
+                // Validate date is within timeline range
+                const timeline = timelines.find(t => t.id == occTimelineId);
+                if (timeline) {
+                    const timelineStart = dateToDays(timeline.startDate);
+                    const timelineEnd = dateToDays(timeline.endDate);
+                    const occurrenceDate = dateToDays(date);
+                    
+                    if (occurrenceDate < timelineStart || occurrenceDate > timelineEnd) {
+                        return alert('Occurrence date must be within the timeline\'s date range.');
+                    }
+                }
+                const occurrence = {
+                    timeline_id: occTimelineId,
+                    title,
+                    date,
+                    description,
+                    is_span: false
+                };
+                const savedOccurrence = await saveOccurrence(occurrence);
+                if (savedOccurrence) {
+                    const timeline = timelines.find(t => t.id == occTimelineId);
+                    timeline.occurrences.push(savedOccurrence);
+                } else {
+                    alert('Failed to save occurrence. Please try again.');
+                }
+
+            document.getElementById('occ-modal').classList.add('hidden');
+            renderTimelines();
+        };
+        document.getElementById('cancel-occ-btn').onclick = function() {
+            document.getElementById('occ-modal').classList.add('hidden');
+        };
+
+        // Add deleteTimeline function
+        async function deleteTimeline(id) {
+            if (!confirm('Are you sure you want to delete this timeline?')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/timelines/${id}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    timelines = timelines.filter(t => t.id !== id);
+                    renderTimelines();
+                } else {
+                    console.error('Failed to delete timeline');
+                    alert('Failed to delete timeline');
+                }
+            } catch (error) {
+                console.error('Error deleting timeline:', error);
+                alert('Error deleting timeline');
+            }
+        }
+
+
+
+
+
+
+
+        
+        // File upload handling - moved to setupEventListeners
+        
+        // Drag and drop handling removed - no drop zone anymore
+        function formatTime(date) {
+          if (!(date instanceof Date)) date = new Date(date);
+          return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        window.renderDetailFiles = function(id) {
+          // Files are now shown in the main messages area
+          window.renderDetailMessages(id);
+        }
+        
+        window.formatFileSize = function(bytes) {
+          if (bytes === 0) return '0 Bytes';
+          const k = 1024;
+          const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        window.deleteDetailFile = function(id, idx) {
+          if (!detailFiles[id]) return;
+          detailFiles[id].splice(idx, 1);
+          renderDetailFiles(id);
+        };
+
+        // Open Edit Timeline Modal
+        window.openEditTimelineModal = function(timelineId) {
+            const timeline = timelines.find(t => t.id == timelineId);
+            document.getElementById('edit-timeline-title').value = timeline.title;
+            document.getElementById('edit-timeline-description').value = timeline.description;
+            document.getElementById('edit-timeline-start-date').value = timeline.startDate ? new Date(timeline.startDate).toISOString().slice(0,10) : '';
+            if (timeline.endDate === 'present' || timeline.endDate === null) {
+                document.getElementById('edit-timeline-end-date').value = '';
+                document.getElementById('edit-timeline-present').checked = true;
+                document.getElementById('edit-timeline-end-date').disabled = true;
+            } else {
+                document.getElementById('edit-timeline-end-date').value = new Date(timeline.endDate).toISOString().slice(0,10);
+                document.getElementById('edit-timeline-present').checked = false;
+                document.getElementById('edit-timeline-end-date').disabled = false;
+            }
+            document.getElementById('edit-timeline-modal').classList.remove('hidden');
+            document.getElementById('edit-timeline-form').dataset.timelineId = timelineId;
+        };
+
+        document.getElementById('edit-timeline-present').onchange = function() {
+            document.getElementById('edit-timeline-end-date').disabled = this.checked;
+        };
+
+        document.getElementById('cancel-edit-timeline-btn').onclick = function() {
+            document.getElementById('edit-timeline-modal').classList.add('hidden');
+        };
+
+        document.getElementById('edit-timeline-form').onsubmit = async function(e) {
+            e.preventDefault();
+            const timelineId = this.dataset.timelineId;
+            const title = document.getElementById('edit-timeline-title').value.trim();
+            const description = document.getElementById('edit-timeline-description').value.trim();
+            const startDate = document.getElementById('edit-timeline-start-date').value;
+            const present = document.getElementById('edit-timeline-present').checked;
+            const endDate = present ? null : document.getElementById('edit-timeline-end-date').value;
+            if (!title || !startDate || (!present && !endDate)) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            // Validate all occurrences/spans are within new range
+            const timeline = timelines.find(t => t.id == timelineId);
+            const startNum = dateToExcelSerial(startDate);
+            const endNum = present ? dateToExcelSerial(formatDateMMDDYYYY(new Date())) : dateToExcelSerial(endDate);
+            for (const occ of (timeline.occurrences || [])) {
+                let occDateNum = null;
+                if (occ.span) {
+                    occDateNum = dateToExcelSerial(occ.startDate);
+                    if (occDateNum < startNum || dateToExcelSerial(occ.endDate) > endNum) {
+                        alert('A span is outside the new timeline range. Please adjust or remove it first.');
+                        return;
+                    }
+                } else {
+                    occDateNum = dateToExcelSerial(occ.date);
+                    if (occDateNum < startNum || occDateNum > endNum) {
+                        alert('An occurrence is outside the new timeline range. Please adjust or remove it first.');
+                        return;
+                    }
+                }
+            }
+            // Save to backend
+            const payload = {
+                title,
+                description,
+                start_date: startDate,
+                end_date: present ? null : endDate
+            };
+            const response = await fetch(`${API_BASE}/timelines/${timelineId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (response.ok) {
+                document.getElementById('edit-timeline-modal').classList.add('hidden');
+                await loadData();
+            } else {
+                alert('Failed to update timeline.');
+            }
+        };
+
+        // Footer button event listeners
+        document.getElementById('footer-new-timeline-btn').onclick = () => showView('create-timeline');
+        document.getElementById('footer-add-global-event-btn').onclick = () => openEventModal();
+
+        // Add Manage Global Events button to the top controls
+        // const dashboardControls = document.querySelector('.flex.justify-center.gap-4.mb-6');
+        // const manageBtn = document.createElement('button');
+        // manageBtn.id = 'manage-global-events-btn';
+        // manageBtn.className = 'bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors font-medium';
+        // manageBtn.innerHTML = '🛠️ Manage Events';
+        // dashboardControls.appendChild(manageBtn);
+
+        // manageBtn.onclick = function() {
+        //     renderGlobalEventsList();
+        //     document.getElementById('manage-global-events-modal').classList.remove('hidden');
+        // };
+        // document.getElementById('close-manage-global-events-btn').onclick = function() {
+        //     document.getElementById('manage-global-events-modal').classList.add('hidden');
+        // };
+
+        // In the global events modal, use data attributes for buttons
+        function renderGlobalEventsList() {
+            const list = document.getElementById('global-events-list');
+            if (globalEvents.length === 0) {
+                list.innerHTML = '<div class="text-gray-500 text-center">No global events yet.</div>';
+                return;
+            }
+            list.innerHTML = globalEvents.map(ev => `
+              <div class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
+                <div>
+                  <div class="font-semibold">${ev.title}</div>
+                  <div class="text-sm text-gray-500">${formatDateMMDDYYYY(ev.date)}</div>
+                </div>
+                <div class="flex gap-2">
+                  <button class="edit-global-event-btn p-2 rounded hover:bg-blue-100 dark:hover:bg-blue-900" data-id="${ev.id}">✏️</button>
+                  <button class="delete-global-event-btn p-2 rounded hover:bg-red-100 dark:hover:bg-red-900" data-id="${ev.id}">🗑️</button>
+                </div>
+              </div>
+            `).join('');
+        }
+
+        // Event delegation for modal buttons
+        const globalEventsList = document.getElementById('global-events-list');
+        globalEventsList.onclick = function(e) {
+            if (e.target.classList.contains('edit-global-event-btn')) {
+                const id = e.target.getAttribute('data-id');
+                openEditEventModal(Number(id), 'global');
+            }
+            if (e.target.classList.contains('delete-global-event-btn')) {
+                const id = e.target.getAttribute('data-id');
+                deleteEvent(Number(id), 'global');
+            }
+        };
+
+        document.getElementById('close-manage-global-events-btn').onclick = function() {
+            document.getElementById('manage-global-events-modal').classList.add('hidden');
+        };
+
+        // Edit Event Modal logic
+        let editingEventId = null;
+        let editingEventType = null;
+        window.openEditEventModal = function(eventId, type) {
+            editingEventId = eventId;
+            editingEventType = type;
+            let event;
+            if (type === 'occurrence') {
+                event = selectedTimeline.occurrences.find(ev => ev.id == eventId);
+            } else if (type === 'global') {
+                event = globalEvents.find(ev => ev.id == eventId);
+            }
+            document.getElementById('edit-event-title').value = event.title;
+            document.getElementById('edit-event-date').value = event.date;
+            document.getElementById('edit-event-description').value = event.description;
+            document.getElementById('edit-event-modal').classList.remove('hidden');
+        };
+        document.getElementById('cancel-edit-event-btn').onclick = function() {
+            document.getElementById('edit-event-modal').classList.add('hidden');
+        };
+        document.getElementById('edit-event-form').onsubmit = async function(e) {
+            e.preventDefault();
+            const title = document.getElementById('edit-event-title').value.trim();
+            const date = document.getElementById('edit-event-date').value;
+            const description = document.getElementById('edit-event-description').value.trim();
+            if (!title || !date) {
+                alert('Title and date required.');
+                return;
+            }
+            if (editingEventType === 'occurrence') {
+                await fetch(`${API_BASE}/occurrences/${editingEventId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, date, description })
+                });
+                await loadData();
+                renderEvents();
+                renderTimelines();
+            } else {
+                await fetch(`${API_BASE}/global-events/${editingEventId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, date, description })
+                });
+                await loadData();
+                renderTimelines();
+            }
+            document.getElementById('edit-event-modal').classList.add('hidden');
+        };
+
+        // Delete event logic
+        window.deleteEvent = async function(eventId, type) {
+            if (!confirm('Are you sure you want to delete this event?')) return;
+            let btn = event.target;
+            btn.disabled = true;
+            try {
+                if (type === 'occurrence') {
+                    await fetch(`${API_BASE}/occurrences/${eventId}`, { method: 'DELETE' });
+                    await loadData();
+                    renderEvents();
+                    renderTimelines();
+                } else {
+                    const resp = await fetch(`${API_BASE}/global-events/${eventId}`, { method: 'DELETE' });
+                    if (!resp.ok && resp.status !== 204) {
+                        alert('Failed to delete global event.');
+                    }
+                    await loadData();
+                    renderGlobalEventsList();
+                    renderTimelines();
+                    // Close modal if open
+                    document.getElementById('manage-global-events-modal').classList.add('hidden');
+                }
+            } catch (err) {
+                alert('An error occurred while deleting.');
+                console.error(err);
+            } finally {
+                btn.disabled = false;
+            }
+        };
+        }
+    </script>
+    <div id="timeline-tooltip" class="fixed z-50 pointer-events-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg px-4 py-2 text-sm hidden"></div>
+</body>
+</html>
+
+

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - Timeline App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+  <div class="bg-white p-8 rounded shadow-md w-full max-w-sm">
+    <h2 class="text-2xl font-bold mb-6 text-center">Login</h2>
+    <form id="login-form" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Username</label>
+        <input type="text" id="username" class="w-full px-3 py-2 border rounded" required>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Password</label>
+        <input type="password" id="password" class="w-full px-3 py-2 border rounded" required>
+      </div>
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Login</button>
+      <div id="login-error" class="text-red-500 text-sm mt-2 hidden"></div>
+    </form>
+  </div>
+  <script>
+    document.getElementById('login-form').onsubmit = async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      
+      console.log('Attempting login with username:', username);
+      
+      try {
+        const res = await fetch('/login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({username, password})
+        });
+        
+        console.log('Response status:', res.status);
+        console.log('Response headers:', res.headers);
+        
+        const data = await res.json();
+        console.log('Login response:', data);
+        
+        if (res.ok && data.success) {
+          console.log('Login successful, redirecting...');
+          // Store token and role
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('role', data.role);
+          window.location.href = '/';
+        } else {
+          console.log('Login failed:', data.error);
+          document.getElementById('login-error').textContent = data.error || 'Login failed';
+          document.getElementById('login-error').classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        document.getElementById('login-error').textContent = 'Network error: ' + error.message;
+        document.getElementById('login-error').classList.remove('hidden');
+      }
+    };
+  </script>
+</body>
+</html>

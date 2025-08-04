@@ -1,0 +1,895 @@
+       <p class="text-gray-600 dark:text-gray-400 text-center">Create and manage your personal timelines</p>
+                </div>
+                <div class="flex justify-center gap-4 mb-6">
+                    <button id="add-global-event-btn" class="bg-blue-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors font-medium">
+                        🌐 + Add Event
+                    </button>
+                    <button id="new-timeline-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors font-medium">
+                        ➕ New Timeline
+                    </button>
+                </div>
+                <hr class="border-t border-gray-300 dark:border-gray-700 opacity-40 mb-8" />
+                <div id="timelines-grid" class="flex flex-col">
+                    <!-- Timeline axes are rendered here -->
+                </div>
+            </div>
+
+            <!-- Create Timeline View -->
+            <div id="create-timeline-view" class="hidden max-w-2xl">
+                <h2 class="text-3xl font-bold mb-8">Create New Timeline</h2>
+                
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-2">Timeline Title</label>
+                        <input type="text" id="timeline-title" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" placeholder="Enter timeline title...">
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-2">Description</label>
+                        <textarea id="timeline-description" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" rows="4" placeholder="Describe your timeline..."></textarea>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-2">Start Date</label>
+                        <input type="date" id="timeline-start-date" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-2">End Date</label>
+                        <input type="date" id="timeline-end-date" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                    </div>
+                    
+                    <div class="flex gap-4">
+                        <button id="create-timeline-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors font-medium">
+                            Create Timeline
+                        </button>
+                        <button id="cancel-create-btn" class="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 px-6 py-3 rounded-lg transition-colors font-medium">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline View -->
+            <div id="timeline-view" class="hidden">
+                <div class="flex justify-between items-start mb-8">
+                    <div>
+                        <h2 id="timeline-title-display" class="text-3xl font-bold mb-2"></h2>
+                        <p id="timeline-description-display" class="text-gray-600 dark:text-gray-400 text-lg"></p>
+                    </div>
+                    <button id="add-event-btn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors font-medium">
+                        ➕ Add Event
+                    </button>
+                </div>
+
+                <div id="events-container">
+                    <!-- Events will be inserted here -->
+                </div>
+
+                <!-- Empty state -->
+                <div id="empty-timeline" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-12 text-center hidden">
+                    <div class="text-6xl mb-4">📅</div>
+                    <h3 class="text-xl font-semibold mb-2">No events yet</h3>
+                    <p class="text-gray-600 dark:text-gray-400 mb-4">Start building your timeline by adding your first event</p>
+                    <button id="add-first-event-btn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg transition-colors font-medium">
+                        Add First Event
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Add Event Modal -->
+        <div id="add-event-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md">
+                <h3 class="text-xl font-bold mb-4">Add New Event</h3>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Date</label>
+                    <input type="date" id="event-date" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Event Title</label>
+                    <input type="text" id="event-title" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" placeholder="Enter event title...">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Description</label>
+                    <textarea id="event-description" class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" rows="3" placeholder="Describe the event..."></textarea>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2">Media (Optional)</label>
+                    <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-lg p-4 text-center transition-colors">
+                        <div class="text-2xl mb-2">📁</div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Click to upload or drag and drop</p>
+                        <p class="text-xs text-gray-400 mt-1">MP3, MP4, PDF, JPG, PNG up to 10MB</p>
+                    </div>
+                </div>
+                
+                <div class="flex gap-4">
+                    <button id="save-event-btn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg transition-colors font-medium flex-1">
+                        Add Event
+                    </button>
+                    <button id="cancel-event-btn" class="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 px-6 py-3 rounded-lg transition-colors font-medium">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add this modal to your HTML, hidden by default -->
+        <div id="span-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md">
+                <h3 class="text-xl font-bold mb-4">Add New Span</h3>
+                <form id="span-form">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Title</label>
+                        <input type="text" id="span-title" class="w-full px-4 py-3 rounded-lg border" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Description</label>
+                        <textarea id="span-description" class="w-full px-4 py-3 rounded-lg border" rows="3"></textarea>
+                    </div>
+                    <div class="mb-4 flex gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Start Date</label>
+                            <input type="date" id="span-start-date" class="px-4 py-3 rounded-lg border" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">End Date</label>
+                            <input type="date" id="span-end-date" class="px-4 py-3 rounded-lg border" required>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Color</label>
+                        <input type="color" id="span-color" value="#22c55e" class="w-12 h-8 p-0 border-0">
+                    </div>
+                    <div class="flex gap-4">
+                        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium flex-1">Add Span</button>
+                        <button type="button" id="cancel-span-btn" class="px-6 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 font-medium flex-1">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Occurrence/Event Modal -->
+        <div id="occ-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md">
+                <h3 id="occ-modal-title" class="text-xl font-bold mb-4">Add New Occurrence</h3>
+                <form id="occ-form">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Title</label>
+                        <input type="text" id="occ-title" class="w-full px-4 py-3 rounded-lg border" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Date</label>
+                        <input type="date" id="occ-date" class="w-full px-4 py-3 rounded-lg border" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Description</label>
+                        <textarea id="occ-description" class="w-full px-4 py-3 rounded-lg border" rows="3"></textarea>
+                    </div>
+                    <div class="mb-4" id="occ-color-row">
+                        <label class="block text-sm font-medium mb-2">Color</label>
+                        <input type="color" id="occ-color" value="#3b82f6" class="w-12 h-8 p-0 border-0">
+                        <span class="text-xs text-gray-500 ml-2">Red is reserved for global events</span>
+                    </div>
+                    <div class="flex gap-4">
+                        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium flex-1" id="occ-submit-btn">Add Occurrence</button>
+                        <button type="button" id="cancel-occ-btn" class="px-6 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 font-medium flex-1">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Occurrence/Event Detail Modal -->
+        <div id="detail-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+          <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-lg flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-2">
+              <h3 id="detail-title" class="text-xl font-bold"></h3>
+              <button id="close-detail-btn" class="text-gray-400 hover:text-gray-700 dark:hover:text-white text-2xl">&times;</button>
+            </div>
+            <div id="detail-date" class="text-gray-500 dark:text-gray-400 mb-4"></div>
+            <div id="detail-messages" class="flex-1 overflow-y-auto mb-4 space-y-6 border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900"></div>
+            <form id="detail-message-form" class="flex gap-2 mt-2">
+              <input id="detail-message-input" type="text" class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" placeholder="Type a message..." required />
+              <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">Send</button>
+            </form>
+          </div>
+        </div>
+    </div>
+
+    <script>
+        // App state
+        let currentView = 'dashboard';
+        let selectedTimeline = null;
+        let darkMode = false;
+        
+        // API base URL
+        const API_BASE = 'http://localhost:5000';
+        
+        // Data storage
+        let timelines = [];
+        let globalEvents = [];
+
+        let occMode = 'occurrence'; // or 'event'
+        let occTimelineId = null;
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            loadData();
+        });
+
+        // Load data from Flask backend
+        async function loadData() {
+            try {
+                // Load timelines
+                const timelinesResponse = await fetch(`${API_BASE}/timelines`);
+                const dbTimelines = await timelinesResponse.json();
+                
+                // Convert database field names to frontend format
+                timelines = dbTimelines.map(t => ({
+                    ...t,
+                    startDate: t.start_date,
+                    endDate: t.end_date,
+                    occurrences: [] // We'll load these separately
+                }));
+                
+                // Load global events
+                const eventsResponse = await fetch(`${API_BASE}/global-events`);
+                globalEvents = await eventsResponse.json();
+                
+                renderTimelines();
+            } catch (error) {
+                console.error('Error loading data:', error);
+                // Fallback to empty arrays if API fails
+                timelines = [];
+                globalEvents = [];
+                renderTimelines();
+            }
+        }
+
+        // Save timeline to backend
+        async function saveTimeline(timeline) {
+            try {
+                const response = await fetch(`${API_BASE}/timelines`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(timeline)
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error saving timeline:', error);
+                return null;
+            }
+        }
+
+        // Save occurrence to backend
+        async function saveOccurrence(occurrence) {
+            try {
+                const response = await fetch(`${API_BASE}/occurrences`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(occurrence)
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error saving occurrence:', error);
+                return null;
+            }
+        }
+
+        // Save global event to backend
+        async function saveGlobalEvent(event) {
+            try {
+                const response = await fetch(`${API_BASE}/global-events`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(event)
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error saving global event:', error);
+                return null;
+            }
+        }
+
+        function setupEventListeners() {
+            document.getElementById('new-timeline-btn').addEventListener('click', () => showView('create-timeline'));
+            document.getElementById('create-timeline-btn').addEventListener('click', createTimeline);
+            document.getElementById('cancel-create-btn').addEventListener('click', () => showView('dashboard'));
+            document.getElementById('add-event-btn').addEventListener('click', () => showModal(true));
+            document.getElementById('add-first-event-btn').addEventListener('click', () => showModal(true));
+            document.getElementById('save-event-btn').addEventListener('click', addEvent);
+            document.getElementById('cancel-event-btn').addEventListener('click', () => showModal(false));
+            document.getElementById('back-btn').addEventListener('click', () => showView('dashboard'));
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+            document.getElementById('add-global-event-btn').addEventListener('click', () => {
+                openEventModal();
+            });
+
+            // Close modal when clicking outside
+            document.getElementById('add-event-modal').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('add-event-modal')) {
+                    showModal(false);
+                }
+            });
+        }
+
+        function showView(view) {
+            currentView = view;
+            document.getElementById('dashboard-view').classList.add('hidden');
+            document.getElementById('create-timeline-view').classList.add('hidden');
+            document.getElementById('timeline-view').classList.add('hidden');
+            
+            if (view === 'dashboard') {
+                document.getElementById('dashboard-view').classList.remove('hidden');
+                document.getElementById('back-btn').classList.add('hidden');
+                renderTimelines();
+            } else if (view === 'create-timeline') {
+                document.getElementById('create-timeline-view').classList.remove('hidden');
+                document.getElementById('back-btn').classList.remove('hidden');
+            } else if (view === 'timeline') {
+                document.getElementById('timeline-view').classList.remove('hidden');
+                document.getElementById('back-btn').classList.remove('hidden');
+                renderEvents();
+            }
+        }
+
+        function showModal(show) {
+            const modal = document.getElementById('add-event-modal');
+            if (show) {
+                modal.classList.remove('hidden');
+                clearEventForm();
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function renderTimelines() {
+            const grid = document.getElementById('timelines-grid');
+            if (timelines.length === 0) {
+                grid.innerHTML = '<div class="text-gray-500 dark:text-gray-400 col-span-full text-center">No timelines yet. Click "New Timeline" to get started.</div>';
+                return;
+            }
+            // Use the grid's width for axisWidth
+            const gridRect = grid.getBoundingClientRect();
+            const axisWidth = Math.max(gridRect.width - 180, 300); // leave space for labels/buttons, min 300px
+            grid.innerHTML = timelines.map(timeline => {
+                const start = dateToExcelSerial(timeline.startDate);
+                const end = dateToExcelSerial(timeline.endDate);
+                const total = end - start;
+                // Render occurrences (dots)
+                const occurrences = (timeline.occurrences || []).filter(ev => !ev.span).map(ev => {
+                    const pos = Math.max(0, Math.min(((dateToExcelSerial(ev.date) - start) / total) * axisWidth, axisWidth));
+                    return `<div title="${ev.title}" class="absolute top-1/2 -translate-y-1/2" style="left:${pos}px">
+                        <div class="w-4 h-4 rounded-full border-2 border-white shadow cursor-pointer" style="background-color:${ev.color || '#3b82f6'}"></div>
+                    </div>`;
+                }).join('');
+                // Render spans (bars)
+                const spans = (timeline.occurrences || []).filter(ev => ev.span).map(ev => {
+                    const spanStart = ((dateToExcelSerial(ev.startDate) - start) / total) * axisWidth;
+                    const spanEnd = ((dateToExcelSerial(ev.endDate) - start) / total) * axisWidth;
+                    const width = Math.max(spanEnd - spanStart, 8);
+                    return `<div title="${ev.title}" class="absolute top-1/2 -translate-y-1/2 h-3 rounded opacity-70" style="left:${spanStart}px; width:${width}px; background-color:${ev.color};"></div>`;
+                }).join('');
+                // Render global events (red dots)
+                const globalDots = globalEvents.map(ev => {
+                    const pos = Math.max(0, Math.min(((dateToExcelSerial(ev.date) - start) / total) * axisWidth, axisWidth));
+                    if (pos < 0 || pos > axisWidth) return ''; // Only show if within axis
+                    return `<div title="${ev.title} (Global Event)" class="absolute top-1/2 -translate-y-1/2" style="left:${pos}px">
+                        <div class="w-4 h-4 rounded-full border-2 border-white shadow cursor-pointer" style="background-color:${ev.color || '#ef4444'}"></div>
+                    </div>`;
+                }).join('');
+                return `
+  <div class="block w-full my-12">
+    <div class="flex flex-col items-center mb-4">
+      <div class="flex items-center gap-2 mb-2">
+        <div class="font-bold text-lg text-center">${timeline.title}</div>
+        <button onclick="deleteTimeline(${timeline.id})" title="Delete Timeline" class="p-2 rounded hover:bg-red-100 dark:hover:bg-red-900"><span style="color:#ef4444; font-size:1.2em;">🗑️</span></button>
+      </div>
+    </div>
+    <div style="position:relative; width:100vw; left:calc(-50vw + 50%); margin:0; padding:0;">
+      <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 w-full" style="margin:0; padding:0;">
+        <span class="whitespace-nowrap pl-2">${timeline.startDate}</span>
+        <div class="flex-1 h-0.5 bg-gray-300 dark:bg-gray-600 relative mx-2 axis-line"></div>
+        <span class="whitespace-nowrap pr-2">${timeline.endDate}</span>
+      </div>
+    </div>
+    <div class="flex justify-center gap-4 mt-4">
+      <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium" onclick="promptAddOccurrence(${timeline.id})">+ Add Occurrence</button>
+      <button class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium" onclick="promptAddSpan(${timeline.id})">+ Add Span</button>
+    </div>
+  </div>
+`;
+            }).join('');
+
+            // After rendering all timelines, use JavaScript to place the dots and spans
+            setTimeout(() => {
+                document.querySelectorAll('.axis-line').forEach((axis, i) => {
+                    // Remove any old dots/spans
+                    axis.querySelectorAll('.dot, .span, .global-dot').forEach(el => el.remove());
+
+                    const axisWidth = axis.getBoundingClientRect().width;
+                    const timeline = timelines[i];
+                    const start = dateToExcelSerial(timeline.startDate);
+                    const end = dateToExcelSerial(timeline.endDate);
+                    const total = end - start;
+
+                    // Occurrences
+                    (timeline.occurrences || []).filter(ev => !ev.span).forEach(ev => {
+                        const pos = ((dateToExcelSerial(ev.date) - start) / total) * axisWidth;
+                        const dot = document.createElement('div');
+                        dot.className = 'dot absolute top-1/2 -translate-y-1/2';
+                        dot.style.left = `${pos}px`;
+                        dot.innerHTML = `<div class="w-4 h-4 rounded-full border-2 border-white shadow cursor-pointer" style="background-color:${ev.color || '#3b82f6'}"></div>`;
+                        axis.appendChild(dot);
+                        dot.onmouseenter = function(e) {
+                            this.firstChild.style.boxShadow = '0 0 0 4px #60a5fa55';
+                            showTooltip(e, `<div><b>${ev.title}</b></div><div>${ev.date}</div><div>${ev.description || ''}</div>`);
+                        };
+                        dot.onmousemove = function(e) { showTooltip(e, `<div><b>${ev.title}</b></div><div>${ev.date}</div><div>${ev.description || ''}</div>`); };
+                        dot.onmouseleave = function() {
+                            this.firstChild.style.boxShadow = '';
+                            hideTooltip();
+                        };
+                        dot.onclick = function() { openDetailModal(ev, 'occurrence'); };
+                    });
+
+                    // Spans
+                    (timeline.occurrences || []).filter(ev => ev.span).forEach(ev => {
+                        const spanStart = ((dateToExcelSerial(ev.startDate) - start) / total) * axisWidth;
+                        const spanEnd = ((dateToExcelSerial(ev.endDate) - start) / total) * axisWidth;
+                        const width = Math.max(spanEnd - spanStart, 8);
+                        const span = document.createElement('div');
+                        span.className = 'span absolute top-1/2 -translate-y-1/2 h-3 rounded opacity-70';
+                        span.style.left = `${spanStart}px`;
+                        span.style.width = `${width}px`;
+                        span.style.backgroundColor = ev.color;
+                        axis.appendChild(span);
+                        span.onmouseenter = function(e) {
+                            this.style.boxShadow = '0 0 0 4px #22c55e55';
+                            showTooltip(e, `<div><b>${ev.title}</b></div><div>${ev.startDate} → ${ev.endDate}</div><div>${ev.description || ''}</div>`);
+                        };
+                        span.onmousemove = function(e) { showTooltip(e, `<div><b>${ev.title}</b></div><div>${ev.startDate} → ${ev.endDate}</div><div>${ev.description || ''}</div>`); };
+                        span.onmouseleave = function() {
+                            this.style.boxShadow = '';
+                            hideTooltip();
+                        };
+                        span.onclick = function() { openDetailModal(ev, 'span'); };
+                    });
+
+                    // Global Events
+                    globalEvents.forEach(ev => {
+                        const pos = ((dateToExcelSerial(ev.date) - start) / total) * axisWidth;
+                        const dot = document.createElement('div');
+                        dot.className = 'global-dot absolute top-1/2 -translate-y-1/2';
+                        dot.style.left = `${pos}px`;
+                        dot.innerHTML = `<div class="w-4 h-4 border-2 border-white shadow cursor-pointer" style="background-color:${ev.color || '#ef4444'}; border-radius: 3px;"></div>`;
+                        axis.appendChild(dot);
+                        dot.onmouseenter = function(e) {
+                            this.firstChild.style.boxShadow = '0 0 0 4px #ef444455';
+                            showTooltip(e, `<div><b>${ev.title}</b></div><div>${ev.date}</div><div>${ev.description || ''}</div>`);
+                        };
+                        dot.onmousemove = function(e) { showTooltip(e, `<div><b>${ev.title}</b></div><div>${ev.date}</div><div>${ev.description || ''}</div>`); };
+                        dot.onmouseleave = function() {
+                            this.firstChild.style.boxShadow = '';
+                            hideTooltip();
+                        };
+                        dot.onclick = function() { openDetailModal(ev, 'event'); };
+                    });
+                });
+            }, 0); // Use a small timeout to ensure DOM is rendered
+        }
+
+        function viewTimeline(id) {
+            selectedTimeline = timelines.find(t => t.id === id);
+            document.getElementById('timeline-title-display').textContent = selectedTimeline.title;
+            document.getElementById('timeline-description-display').textContent = selectedTimeline.description;
+            showView('timeline');
+        }
+
+        function renderEvents() {
+            const container = document.getElementById('events-container');
+            const empty = document.getElementById('empty-timeline');
+            
+            if (!selectedTimeline || selectedTimeline.occurrences.length === 0) {
+                container.classList.add('hidden');
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
+            empty.classList.add('hidden');
+
+            const sortedEvents = [...selectedTimeline.occurrences].sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            container.innerHTML = sortedEvents.map(event => `
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                                    ${formatDate(event.date)}
+                                </span>
+                            </div>
+                            <h3 class="text-xl font-semibold mb-2">${event.title}</h3>
+                            <p class="text-gray-700 dark:text-gray-300">${event.description}</p>
+                        </div>
+                        <div class="flex gap-2 ml-4">
+                            <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                                ✏️
+                            </button>
+                            <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-red-500">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                    ${event.media ? `
+                        <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center gap-3">
+                            <span class="text-blue-500">📄</span>
+                            <span class="text-sm">${event.media.name}</span>
+                            <span class="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-600">${event.media.type}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        async function createTimeline() {
+            const title = document.getElementById('timeline-title').value.trim();
+            const description = document.getElementById('timeline-description').value.trim();
+            const startDate = document.getElementById('timeline-start-date').value;
+            const endDate = document.getElementById('timeline-end-date').value;
+            
+            if (!title) {
+                alert('Please enter a timeline title');
+                return;
+            }
+            if (!startDate || !endDate) {
+                alert('Please enter both start and end dates');
+                return;
+            }
+            const newTimeline = {
+                title,
+                description,
+                start_date: startDate,
+                end_date: endDate
+            };
+            
+            const savedTimeline = await saveTimeline(newTimeline);
+            if (savedTimeline) {
+                timelines.push(savedTimeline);
+                clearTimelineForm();
+                showView('dashboard');
+            } else {
+                alert('Failed to create timeline. Please try again.');
+            }
+        }
+
+        function addEvent() {
+            const date = document.getElementById('event-date').value;
+            const title = document.getElementById('event-title').value.trim();
+            const description = document.getElementById('event-description').value.trim();
+
+            if (!date || !title) {
+                alert('Please fill in the date and event title');
+                return;
+            }
+
+            const newEvent = {
+                id: Date.now(),
+                date,
+                title,
+                description,
+                media: null
+            };
+
+            selectedTimeline.occurrences.push(newEvent);
+            // Update the timeline in the main array
+            const timelineIndex = timelines.findIndex(t => t.id === selectedTimeline.id);
+            if (timelineIndex !== -1) {
+                timelines[timelineIndex] = selectedTimeline;
+            }
+            
+            showModal(false);
+            renderEvents();
+        }
+
+        function clearTimelineForm() {
+            document.getElementById('timeline-title').value = '';
+            document.getElementById('timeline-description').value = '';
+            document.getElementById('timeline-start-date').value = '';
+            document.getElementById('timeline-end-date').value = '';
+        }
+
+        function clearEventForm() {
+            document.getElementById('event-date').value = '';
+            document.getElementById('event-title').value = '';
+            document.getElementById('event-description').value = '';
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function toggleTheme() {
+            darkMode = !darkMode;
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('theme-toggle');
+            
+            if (darkMode) {
+                html.classList.add('dark');
+                document.body.classList.remove('bg-gray-50', 'text-gray-900');
+                document.body.classList.add('bg-gray-900', 'text-white');
+                themeIcon.textContent = '☀️';
+            } else {
+                html.classList.remove('dark');
+                document.body.classList.remove('bg-gray-900', 'text-white');
+                document.body.classList.add('bg-gray-50', 'text-gray-900');
+                themeIcon.textContent = '🌙';
+            }
+        }
+
+        // Prompt user for occurrence or span
+        function promptAddOccurrence(timelineId) {
+            openOccurrenceModal(timelineId);
+        }
+        function promptAddSpan(timelineId) {
+            const timeline = timelines.find(t => t.id === timelineId);
+            if (!timeline) return;
+            openSpanModal(timeline);
+        }
+
+        function openSpanModal(timeline) {
+            document.getElementById('span-modal').classList.remove('hidden');
+            document.getElementById('span-title').value = '';
+            document.getElementById('span-description').value = '';
+            document.getElementById('span-start-date').value = '';
+            document.getElementById('span-end-date').value = '';
+            document.getElementById('span-color').value = '#22c55e';
+            // Set min/max for date pickers
+            document.getElementById('span-start-date').min = timeline.startDate;
+            document.getElementById('span-start-date').max = timeline.endDate;
+            document.getElementById('span-end-date').min = timeline.startDate;
+            document.getElementById('span-end-date').max = timeline.endDate;
+            // Store timeline id for submit
+            document.getElementById('span-form').dataset.timelineId = timeline.id;
+        }
+
+        function openOccurrenceModal(timelineId) {
+            occMode = 'occurrence';
+            occTimelineId = timelineId;
+            document.getElementById('occ-modal-title').textContent = 'Add New Occurrence';
+            document.getElementById('occ-submit-btn').textContent = 'Add Occurrence';
+            document.getElementById('occ-color-row').classList.remove('hidden');
+            document.getElementById('occ-color').value = '#3b82f6'; // Default color for occurrences
+            document.getElementById('occ-title').value = '';
+            document.getElementById('occ-date').value = '';
+            document.getElementById('occ-description').value = '';
+            document.getElementById('occ-modal').classList.remove('hidden');
+        }
+
+        function openEventModal() {
+            occMode = 'event';
+            occTimelineId = null;
+            document.getElementById('occ-modal-title').textContent = 'Add New Event';
+            document.getElementById('occ-submit-btn').textContent = 'Add Event';
+            document.getElementById('occ-color-row').classList.add('hidden');
+            document.getElementById('occ-color').value = '#ef4444'; // red
+            document.getElementById('occ-title').value = '';
+            document.getElementById('occ-date').value = '';
+            document.getElementById('occ-description').value = '';
+            document.getElementById('occ-modal').classList.remove('hidden');
+        }
+
+        document.getElementById('span-form').onsubmit = async function(e) {
+            e.preventDefault();
+            const timelineId = this.dataset.timelineId;
+            const timeline = timelines.find(t => t.id == timelineId);
+            const title = document.getElementById('span-title').value.trim();
+            const description = document.getElementById('span-description').value.trim();
+            const startDate = document.getElementById('span-start-date').value;
+            const endDate = document.getElementById('span-end-date').value;
+            const color = document.getElementById('span-color').value;
+            if (!title || !startDate || !endDate) return alert('All fields required.');
+            if (startDate < timeline.startDate || endDate > timeline.endDate) {
+                return alert('Span must be within the timeline\'s date range.');
+            }
+            
+            const span = {
+                timeline_id: timelineId,
+                title,
+                description,
+                start_date: startDate,
+                end_date: endDate,
+                color,
+                is_span: true
+            };
+            
+            const savedSpan = await saveOccurrence(span);
+            if (savedSpan) {
+                timeline.occurrences.push(savedSpan);
+                document.getElementById('span-modal').classList.add('hidden');
+                renderTimelines();
+            } else {
+                alert('Failed to save span. Please try again.');
+            }
+        };f
+
+
+rom flask import Flask, request, jsonify
+from flask_cors import CORS
+from db import get_db_connection
+from psycopg2.extras import RealDictCursor
+import traceback
+
+
+print("Starting Flask server...")
+
+app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
+
+
+
+☁  chronoFacts  pip3 install flask-cors
+Defaulting to user installation because normal site-packages is not writeable
+Collecting flask-cors
+  Downloading flask_cors-6.0.1-py3-none-any.whl (13 kB)
+Requirement already satisfied: Werkzeug>=0.7 in /usr/lib/python3/dist-packages (from flask-cors
+) (2.0.2)
+Requirement already satisfied: flask>=0.9 in /usr/lib/python3/dist-packages (from flask-cors) (
+2.0.1)
+Installing collected packages: flask-cors
+Successfully installed flask-cors-6.0.1
+☁  chronoFacts
+
+
+☁  chronoFacts  pkill -f "python3 app.py"
+
+☁  chronoFacts  nohup python3 app.py > flask.log 2>&1 &
+[1] 44335
+☁  chronoFacts
+
+
+☁  chronoFacts  curl http://localhost:5000/timelines
+[]
+☁  chronoFacts
+
+
+curl -X POST http://localhost:5000/timelines -H "Content-Type: application/json" -d '{"title":"Test Timeline","description":"A test timeline","start_date":"2025-01-01","end_date":"2025-12-31"}'
+
+☁  chronoFacts  curl -X POST http://localhost:5000/timelines -H "Content-Type: application/json
+" -d '{"title":"Test Timeline","description":"A test timeline","start_date":"2025-01-01","end_d
+ate":"2025-12-31curl -X POST http://localhost:5000/timelines -H "Content-Type: application/json
+" -d '{"title":"Test Timeline","description":"A test timeline","start_date":"2025-01-01","end_d
+ate":"2025-12-31"}'
+{
+  "error": "permission denied for table timelines\n"
+}
+☁  chronoFacts
+
+
+sudo -u postgres psql -d timeline_db -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO timeline_user;"
+
+
+☁  chronoFacts  sudo -u postgres psql -d timeline_db -c "GRANT ALL PRIVILEGES ON ALL TABLES IN 
+SCHEMA public TOsudo -u postgres psql -d timeline_db -c "GRANT ALL PRIVILEGES ON ALL TABLES IN 
+SCHEMA public TO timeline_user;"
+[sudo] password for jake: 
+could not change directory to "/home/jake/Desktop/Liminal Innovations & Technologies/chronoFact
+s": Permission denied
+GRANT
+☁  chronoFacts
+
+
+sudo -u postgres psql -d timeline_db -c "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO timeline_user;"
+
+☁  chronoFacts  sudo -u postgres psql -d timeline_db -c "GRANT USAGE, SELECT ON ALL SEQUENCES I
+N SCHEMA public sudo -u postgres psql -d timeline_db -c "GRANT USAGE, SELECT ON ALL SEQUENCES I
+N SCHEMA public TO timeline_user;"
+could not change directory to "/home/jake/Desktop/Liminal Innovations & Technologies/chronoFact
+s": Permission denied
+GRANT
+☁  chronoFacts
+
+
+curl -X POST http://localhost:5000/timelines -H "Content-Type: application/json" -d '{"title":"Test Timeline","description":"A test timeline","start_date":"2025-01-01","end_date":"2025-12-31"}'
+
+☁  chronoFacts  curl -X POST http://localhost:5000/timelines -H "Content-Type: application/json
+" -d '{"title":"Test Timeline","description":"A test timeline","start_date":"2025-01-01","end_d
+ate":"2025-12-31curl -X POST http://localhost:5000/timelines -H "Content-Type: application/json
+" -d '{"title":"Test Timeline","description":"A test timeline","start_date":"2025-01-01","end_d
+ate":"2025-12-31"}'
+{
+  "error": "insert or update on table \"timelines\" violates foreign key constraint \"timelines
+_user_id_fkey\"\nDETAIL:  Key (user_id)=(1) is not present in table \"users\".\n"
+}
+☁  chronoFacts
+
+
+sudo -u postgres psql -d timeline_db -c "INSERT INTO users (username, password_hash, role) VALUES ('admin', 'dummy_hash', 'editor') ON CONFLICT (username) DO NOTHING;"
+
+☁  chronoFacts  sudo -u postgres psql -d timeline_db -c "INSERT INTO users (username, password_
+hash, role) VALUsudo -u postgres psql -d timeline_db -c "INSERT INTO users (username, password_
+hash, role) VALUES ('admin', 'dummy_hash', 'editor') ON CONFLICT (username) DO NOTHING;"
+could not change directory to "/home/jake/Desktop/Liminal Innovations & Technologies/chronoFact
+s": Permission denied
+INSERT 0 1
+☁  chronoFacts
+
+
+curl -X POST http://localhost:5000/timelines -H "Content-Type: application/json" -d '{"title":"Test Timeline","description":"A test timeline","start_date":"2025-01-01","end_date":"2025-12-31"}'
+
+
+☁  chronoFacts  curl -X POST http://localhost:5000/timelines -H "Content-Type: application/json
+" -d '{"title":"Test Timeline","description":"A test timeline","start_date":"2025-01-01","end_d
+ate":"2025-12-31curl -X POST http://localhost:5000/timelines -H "Content-Type: application/json
+" -d '{"title":"Test Timeline","description":"A test timeline","start_date":"2025-01-01","end_d
+ate":"2025-12-31"}'
+{
+  "created_at": "Wed, 23 Jul 2025 18:18:58 GMT", 
+  "description": "A test timeline", 
+  "end_date": "Wed, 31 Dec 2025 00:00:00 GMT", 
+  "id": 2, 
+  "start_date": "Wed, 01 Jan 2025 00:00:00 GMT", 
+  "title": "Test Timeline", 
+  "user_id": 1
+}
+☁  chronoFacts
+
+
+☁  chronoFacts  curl http://localhost:5000/timelines
+[
+  {
+    "created_at": "Wed, 23 Jul 2025 18:18:58 GMT", 
+    "description": "A test timeline", 
+    "end_date": "Wed, 31 Dec 2025 00:00:00 GMT", 
+    "id": 2, 
+    "start_date": "Wed, 01 Jan 2025 00:00:00 GMT", 
+    "title": "Test Timeline", 
+    "user_id": 1
+  }
+]
+☁  chronoFacts
+
+
+chronoFacts  python3 -m http.server 8000 &
+[2] 46535
+☁  chronoFacts  Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...
+
+
+Perfect! Now you have both servers running:
+Flask Backend: http://localhost:5000 - Handles database operations
+Frontend Server: http://localhost:8000 - Serves your HTML file
+Your Timeline App is Now Connected! 🎉
+What's Working:
+✅ Flask Backend: Running on port 5000 with database connectivity
+✅ Frontend: Running on port 8000 serving your HTML
+✅ API Integration: Frontend can create and fetch timelines from the database
+✅ CORS Support: Frontend can make requests to Flask
+✅ Database: PostgreSQL with proper permissions and test data
+To Test Your App:
+Open your browser and go to: http://localhost:8000/timeline.html
+You should see the timeline interface
+Try creating a new timeline - it will be saved to the database
+Try adding occurrences, spans, and global events
+API Endpoints Available:
+GET /timelines - Fetch all timelines
+POST /timelines - Create a new timeline
+GET /occurrences - Fetch all occurrences
+POST /occurrences - Create a new occurrence/span
+GET /global-events - Fetch all global events
+POST /global-events - Create a new global event
+Your timeline app is now fully functional with a proper backend! The data will persist in the PostgreSQL database, and you can create, view, and manage your timelines through the web interface.
