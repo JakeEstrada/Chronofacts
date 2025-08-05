@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .video-container {
+            margin: 20px 0;
+            border: 2px solid #3b82f6;
+            background: #000;
+            display: inline-block;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Video Playback Test</h1>
+    
+    <div id="status" class="status">Loading...</div>
+    
+    <h2>Original Video (HEVC/H.265)</h2>
+    <div class="video-container">
+        <video id="original-video" controls width="320" height="180">
+            <source src="http://127.0.0.1:5001/uploads/ede8684d-e4d8-4800-b371-57e8f782d459_Mom_and_dad_with_Eliott.mp4" type="video/mp4">
+            Your browser does not support video playback.
+        </video>
+    </div>
+    
+    <h2>Transcoded Video (H.264)</h2>
+    <div class="video-container">
+        <video id="transcoded-video" controls width="320" height="180">
+            <source src="http://127.0.0.1:5001/uploads/ede8684d-e4d8-4800-b371-57e8f782d459_Mom_and_dad_with_Eliott_web.mp4" type="video/mp4">
+            Your browser does not support video playback.
+        </video>
+    </div>
+    
+    <script>
+        function updateStatus(message, isError = false) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + (isError ? 'error' : 'success');
+        }
+        
+        function testVideo(videoId, videoName) {
+            const video = document.getElementById(videoId);
+            
+            video.addEventListener('loadstart', () => {
+                console.log(`${videoName}: Load started`);
+            });
+            
+            video.addEventListener('loadedmetadata', () => {
+                console.log(`${videoName}: Metadata loaded - ${video.videoWidth}x${video.videoHeight}`);
+                updateStatus(`${videoName}: Metadata loaded successfully (${video.videoWidth}x${video.videoHeight})`);
+            });
+            
+            video.addEventListener('canplay', () => {
+                console.log(`${videoName}: Can play`);
+                updateStatus(`${videoName}: Video can play!`);
+            });
+            
+            video.addEventListener('error', (e) => {
+                console.error(`${videoName}: Error`, e);
+                updateStatus(`${videoName}: Error loading video`, true);
+            });
+            
+            video.addEventListener('play', () => {
+                console.log(`${videoName}: Started playing`);
+            });
+            
+            video.addEventListener('pause', () => {
+                console.log(`${videoName}: Paused`);
+            });
+        }
+        
+        // Test both videos
+        testVideo('original-video', 'Original Video');
+        testVideo('transcoded-video', 'Transcoded Video');
+        
+        // Check video format support
+        const video = document.createElement('video');
+        const formats = [
+            { type: 'video/mp4', codec: 'avc1.42E01E' },
+            { type: 'video/webm', codec: 'vp8' },
+            { type: 'video/ogg', codec: 'theora' }
+        ];
+        
+        console.log('Checking video format support:');
+        formats.forEach(format => {
+            const canPlay = video.canPlayType(`${format.type}; codecs="${format.codec}"`);
+            console.log(`${format.type} (${format.codec}): ${canPlay}`);
+        });
+    </script>
+</body>
+</html> 

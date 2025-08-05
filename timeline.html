@@ -33,9 +33,14 @@
                        
                     </h1>
                 </div>
-                <button id="theme-toggle" class="p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700">
-                    🌙
-                </button>
+                <div class="flex items-center gap-4">
+                    <button id="theme-toggle" class="p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700">
+                        🌙
+                    </button>
+                    <button id="logout-btn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors font-medium">
+                        Logout
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -399,7 +404,69 @@
             }
         };
         
-        window.openDetailModal = function(ev, type) {
+        // Global delete function - must be defined early for onclick handlers
+        window.deleteDetailFile = async function(id, idx) {
+          console.log(`deleteDetailFile called with id=${id}, idx=${idx}`);
+          if (!detailFiles[id]) {
+            console.error('No detailFiles for id:', id);
+            return;
+          }
+          
+          const file = detailFiles[id][idx];
+          if (!file || !file.url) {
+            console.error('No file or URL found');
+            return;
+          }
+          
+          console.log('File to delete:', file);
+          
+          if (!confirm(`Are you sure you want to delete "${file.name}"?`)) {
+            return;
+          }
+          
+          try {
+            console.log(`Deleting file: ${file.url}`);
+            console.log(`Delete URL: ${API_BASE}/messages/${id}/files/${file.media_id}`);
+            console.log(`File media_id: ${file.media_id}`);
+            
+            // Use the correct delete endpoint with occurrence_id and instance_id
+            console.log('About to make DELETE request...');
+            const response = await fetch(`${API_BASE}/messages/${id}/files/${file.media_id}`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              credentials: 'include' // Include cookies for authentication
+            });
+            console.log('DELETE response received:', response.status, response.statusText);
+            
+            if (response.ok) {
+              const result = await response.json();
+              console.log('File deleted successfully:', result);
+              
+              // Remove from frontend array
+              detailFiles[id].splice(idx, 1);
+              
+              // Re-render the files
+              renderDetailFiles(id);
+              
+              // Show success message
+              alert(`Successfully deleted "${file.name}"`);
+            } else if (response.status === 401) {
+              alert('Please log in again to delete files.');
+              window.location.href = '/login';
+            } else {
+              const error = await response.json();
+              console.error('Failed to delete file:', error);
+              alert(`Failed to delete file: ${error.error || 'Unknown error'}`);
+            }
+          } catch (error) {
+            console.error('Error deleting file:', error);
+            alert('Error deleting file. Please try again.');
+          }
+        };
+        
+        window.openDetailModal = async function(ev, type) {
             console.log('openDetailModal called with:', ev, type);
             
             // Store the current occurrence for editing/deleting
@@ -422,6 +489,56 @@
             document.getElementById('detail-modal').classList.remove('hidden');
             document.getElementById('detail-message-input').value = '';
             document.getElementById('detail-message-form').dataset.msgId = ev.id;
+            
+            // Load messages and files from server
+            try {
+                console.log('Loading messages for occurrence:', ev.id);
+                const response = await fetch(`/occurrences/${ev.id}/messages`, {
+                    credentials: 'include'
+                });
+                
+                console.log('Messages response status:', response.status);
+                
+                if (response.ok) {
+                    const messages = await response.json();
+                    console.log('Loaded messages:', messages);
+                    
+                    // Clear existing data
+                    detailMessages[ev.id] = [];
+                    detailFiles[ev.id] = [];
+                    
+                    // Process loaded messages and files
+                    messages.forEach(msg => {
+                        console.log('Processing message:', msg);
+                        if (msg.type === 'message') {
+                            detailMessages[ev.id].push({
+                                text: msg.text,
+                                time: new Date(msg.timestamp)
+                            });
+                        } else {
+                            // All other types are files (video, image, audio, etc.)
+                            console.log('Found file in database:', msg);
+                            detailFiles[ev.id].push({
+                                name: msg.name,
+                                url: msg.url,
+                                type: msg.type,
+                                timestamp: msg.timestamp,
+                                size: msg.size,
+                                media_id: msg.media_id
+                            });
+                        }
+                    });
+                    
+                    console.log('Processed detailMessages:', detailMessages[ev.id]);
+                    console.log('Processed detailFiles:', detailFiles[ev.id]);
+                } else {
+                    const errorText = await response.text();
+                    console.error('Failed to load messages:', response.status, errorText);
+                }
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+            
             if (window.renderDetailMessages) window.renderDetailMessages(ev.id);
             if (window.renderDetailFiles) window.renderDetailFiles(ev.id);
         };
@@ -449,6 +566,7 @@
         
         // Global functions
         window.renderDetailMessages = function(id) {
+          console.log('renderDetailMessages called for id:', id);
           const container = document.getElementById('detail-messages');
           if (!container) {
             console.error('detail-messages container not found');
@@ -456,6 +574,23 @@
           }
           const msgs = detailMessages[id] || [];
           const files = detailFiles[id] || [];
+          
+          console.log('Messages for id', id, ':', msgs);
+          console.log('Files for id', id, ':', files);
+          
+          // Debug: Check for undefined values in files
+          if (files && files.length > 0) {
+            files.forEach((file, index) => {
+              console.log(`File ${index}:`, {
+                name: file.name,
+                url: file.url,
+                size: file.size,
+                type: file.type,
+                media_id: file.media_id,
+                timestamp: file.timestamp
+              });
+            });
+          }
           
           // Combine messages and files, sort by timestamp
           const allItems = [];
@@ -479,6 +614,8 @@
               timestamp: new Date(file.timestamp || Date.now())
             });
           });
+          
+          console.log('All items to render:', allItems);
           
           // Sort by timestamp
           allItems.sort((a, b) => a.timestamp - b.timestamp);
@@ -517,41 +654,20 @@
                   </div>
                 `;
               } else if (fileType.startsWith('video/') || ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv'].includes(fileExtension)) {
-                // Enhanced video player with better format support and debugging
+                // Simple, working video player
                 const videoId = `video-${id}-${item.index}`;
                 fileContent = `
                   <div class="mt-2">
                     <div class="relative">
-                      <video id="${videoId}" class="max-w-full max-h-64 rounded-lg" preload="metadata" controls 
-                             onloadedmetadata="console.log('Video metadata loaded for ${videoId}')"
-                             onerror="console.error('Video error for ${videoId}:', this.error)"
-                             onloadstart="console.log('Video loading started for ${videoId}')"
-                             oncanplay="console.log('Video can play for ${videoId}')">
+                      <video id="${videoId}" controls 
+                             style="width: 320px; height: 180px; display: block; border: 2px solid #3b82f6; background: #000;"
+                             crossorigin="anonymous">
                         <source src="${file.url}" type="${fileType}">
-                        <source src="${file.url}" type="video/mp4">
-                        <source src="${file.url}" type="video/webm">
-                        <source src="${file.url}" type="video/ogg">
-                        <p class="text-red-500 text-sm mt-2">Your browser does not support video playback. 
-                           <a href="${file.url}" target="_blank" class="text-blue-500 underline">Download video</a>
-                        </p>
+                        Your browser does not support video playback.
                       </video>
                       <div class="mt-2 flex items-center gap-2 text-sm">
-                        <button onclick="toggleVideoPlay('${videoId}')" class="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Play/Pause</button>
-                        <label class="text-xs">Volume:</label>
-                        <input type="range" min="0" max="1" step="0.1" value="1" 
-                               onchange="setVideoVolume('${videoId}', this.value)" 
-                               class="w-16 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
-                        <label class="text-xs">Speed:</label>
-                        <select onchange="setVideoSpeed('${videoId}', this.value)" class="text-xs border rounded px-1">
-                          <option value="0.5">0.5x</option>
-                          <option value="0.75">0.75x</option>
-                          <option value="1" selected>1x</option>
-                          <option value="1.25">1.25x</option>
-                          <option value="1.5">1.5x</option>
-                          <option value="2">2x</option>
-                        </select>
-                        <button onclick="toggleVideoFullscreen('${videoId}')" class="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600">Fullscreen</button>
                         <button onclick="downloadVideo('${file.url}', '${fileName}')" class="px-2 py-1 bg-purple-500 text-white rounded hover:bg-purple-600">Download</button>
+                        <button onclick="deleteDetailFile('${id}', ${item.index})" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">🗑️ Delete</button>
                       </div>
                       <div class="text-xs text-gray-500 mt-1">
                         Format: ${fileType} | File: ${fileName}
@@ -584,7 +700,7 @@
                       <span class="text-2xl">📄</span>
                       <div>
                         <div class="font-medium">${fileName}</div>
-                        <div class="text-sm text-gray-500">${window.formatFileSize ? window.formatFileSize(file.size) : file.size + ' bytes'}</div>
+                        <div class="text-sm text-gray-500">${window.formatFileSize ? window.formatFileSize(file.size || 0) : (file.size || 0) + ' bytes'}</div>
                       </div>
                     </div>
                   </div>
@@ -600,7 +716,7 @@
                       <span class="text-xs text-gray-500 dark:text-gray-400">${window.formatTime ? window.formatTime(file.timestamp || new Date()) : new Date(file.timestamp || Date.now()).toLocaleTimeString()}</span>
                     </div>
                     <div class="text-gray-700 dark:text-gray-300">${fileName}</div>
-                    <div class="text-sm text-gray-500">${window.formatFileSize ? window.formatFileSize(file.size) : file.size + ' bytes'}</div>
+                    <div class="text-sm text-gray-500">${window.formatFileSize ? window.formatFileSize(file.size || 0) : (file.size || 0) + ' bytes'}</div>
                     ${fileContent}
                   </div>
                   <button class="absolute right-2 top-2 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-opacity text-sm" onclick="deleteDetailFile('${id}', ${item.index})" title="Delete file">🗑️</button>
@@ -621,11 +737,7 @@
           window.renderDetailMessages(id);
         };
         
-        window.deleteDetailFile = function(id, idx) {
-            if (!detailFiles[id]) return;
-            detailFiles[id].splice(idx, 1);
-            window.renderDetailFiles(id);
-        };
+        // deleteDetailFile function moved to global scope below with server request
         
         // Image viewer functions
         window.openImageViewer = function(imageUrl, imageName) {
@@ -672,6 +784,270 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        };
+
+
+
+        window.updateVideoStatus = function(videoId, status) {
+            const statusElement = document.getElementById(`video-status-${videoId}`);
+            if (statusElement) {
+                const video = document.getElementById(videoId);
+                let statusText = '';
+                let statusColor = '';
+                
+                switch (status) {
+                    case 'metadata-loaded':
+                        // Check if video has valid dimensions
+                        if (video.videoWidth > 0 && video.videoHeight > 0) {
+                            statusText = `Metadata loaded (${video.videoWidth}x${video.videoHeight})`;
+                            statusColor = 'text-green-500';
+                        } else {
+                            statusText = `Metadata loaded but dimensions unknown - video may still work`;
+                            statusColor = 'text-yellow-500';
+                        }
+                        break;
+                    case 'can-play':
+                        statusText = 'Video can play';
+                        statusColor = 'text-green-500';
+                        break;
+                    case 'ready':
+                        statusText = 'Ready to play';
+                        statusColor = 'text-green-500';
+                        break;
+                    case 'error':
+                        statusText = 'Error loading video';
+                        statusColor = 'text-red-500';
+                        break;
+                    default:
+                        statusText = 'Loading...';
+                        statusColor = 'text-blue-500';
+                }
+                
+                statusElement.innerHTML = `<span class="${statusColor}">${statusText}</span>`;
+            }
+        };
+
+        window.handleVideoRotation = function(videoId) {
+            const video = document.getElementById(videoId);
+            if (video) {
+                // Check if video has rotation metadata
+                // This is a workaround for videos with rotation metadata
+                // The browser should handle rotation automatically, but sometimes it doesn't
+                console.log('Checking video rotation for', videoId);
+                console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
+                
+                // If video has 0x0 dimensions but can play, it might be rotated
+                if (video.videoWidth === 0 && video.videoHeight === 0 && video.readyState >= 1) {
+                    console.log('Video appears to be rotated or has metadata issues');
+                    
+                    // Try to force a re-layout
+                    video.style.transform = 'rotate(0deg)';
+                    video.style.width = 'auto';
+                    video.style.height = 'auto';
+                    
+                    // Add buttons to help with video issues
+                    const statusElement = document.getElementById(`video-status-${videoId}`);
+                    if (statusElement) {
+                        statusElement.innerHTML += `
+                            <br><button onclick="fixVideoRotation('${videoId}')" 
+                                class="text-xs bg-yellow-500 text-white px-2 py-1 rounded mt-1">
+                                Fix Rotation
+                            </button>
+                            <button onclick="reloadVideo('${videoId}')" 
+                                class="text-xs bg-blue-500 text-white px-2 py-1 rounded mt-1 ml-1">
+                                Reload Video
+                            </button>
+                        `;
+                    }
+                }
+            }
+        };
+
+        window.fixVideoRotation = function(videoId) {
+            const video = document.getElementById(videoId);
+            if (video) {
+                // Try different rotation values
+                const rotations = [0, 90, 180, 270];
+                const currentRotation = parseInt(video.style.transform.replace('rotate(', '').replace('deg)', '') || 0);
+                const nextRotation = rotations[(rotations.indexOf(currentRotation) + 1) % rotations.length];
+                
+                video.style.transform = `rotate(${nextRotation}deg)`;
+                console.log('Applied rotation:', nextRotation, 'degrees');
+                
+                // Update status
+                const statusElement = document.getElementById(`video-status-${videoId}`);
+                if (statusElement) {
+                    statusElement.innerHTML = `<span class="text-yellow-500">Rotation applied: ${nextRotation}°</span>`;
+                }
+            }
+        };
+        
+        window.reloadVideo = function(videoId) {
+            const video = document.getElementById(videoId);
+            if (video) {
+                const currentSrc = video.currentSrc;
+                video.src = '';
+                video.load();
+                video.src = currentSrc;
+                video.load();
+                console.log('Video reloaded:', videoId);
+                
+                // Update status
+                const statusElement = document.getElementById(`video-status-${videoId}`);
+                if (statusElement) {
+                    statusElement.innerHTML = `<span class="text-blue-500">Video reloaded...</span>`;
+                }
+            }
+        };
+        
+        window.forceVideoDisplay = function(videoId) {
+            const video = document.getElementById(videoId);
+            if (video) {
+                console.log('Forcing video display for:', videoId);
+                
+                // Force video to display even with 0x0 dimensions
+                video.style.width = '320px';
+                video.style.height = '180px';
+                video.style.minWidth = '320px';
+                video.style.minHeight = '180px';
+                video.style.maxWidth = '100%';
+                video.style.maxHeight = '400px';
+                
+                // Try to play the video to trigger display
+                video.play().then(() => {
+                    console.log('Video play successful');
+                    video.pause(); // Pause immediately
+                }).catch(e => {
+                    console.log('Video play failed:', e);
+                });
+                
+                // Test with a temporary video element
+                const testVideo = document.createElement('video');
+                testVideo.src = video.currentSrc;
+                testVideo.preload = 'metadata';
+                testVideo.onloadedmetadata = () => {
+                    console.log('Test video dimensions:', testVideo.videoWidth, 'x', testVideo.videoHeight);
+                    if (testVideo.videoWidth > 0 && testVideo.videoHeight > 0) {
+                        console.log('Test video has valid dimensions');
+                        // Force the original video to use these dimensions
+                        video.style.width = testVideo.videoWidth + 'px';
+                        video.style.height = testVideo.videoHeight + 'px';
+                    }
+                };
+                testVideo.onerror = (e) => {
+                    console.log('Test video error:', e);
+                };
+                
+                // Create a fallback video player if needed
+                createFallbackVideoPlayer(videoId, video.currentSrc);
+                
+                // Update status
+                const statusElement = document.getElementById(`video-status-${videoId}`);
+                if (statusElement) {
+                    statusElement.innerHTML = `<span class="text-green-500">Forced display - try playing now</span>`;
+                }
+            }
+        };
+        
+        window.createFallbackVideoPlayer = function(videoId, videoSrc) {
+            const video = document.getElementById(videoId);
+            if (!video) return;
+            
+            // Create a new video element with different approach
+            const fallbackVideo = document.createElement('video');
+            fallbackVideo.id = videoId + '-fallback';
+            fallbackVideo.style.width = '320px';
+            fallbackVideo.style.height = '180px';
+            fallbackVideo.style.minWidth = '320px';
+            fallbackVideo.style.minHeight = '180px';
+            fallbackVideo.style.maxWidth = '100%';
+            fallbackVideo.style.maxHeight = '400px';
+            fallbackVideo.style.border = '2px solid blue';
+            fallbackVideo.className = 'max-w-full max-h-64 rounded-lg';
+            fallbackVideo.controls = true;
+            fallbackVideo.crossOrigin = 'anonymous';
+            
+            // Add source
+            const source = document.createElement('source');
+            source.src = videoSrc;
+            source.type = 'video/mp4';
+            fallbackVideo.appendChild(source);
+            
+            // Replace the original video
+            video.parentNode.replaceChild(fallbackVideo, video);
+            
+            // Try to play the fallback video
+            fallbackVideo.play().then(() => {
+                console.log('Fallback video plays successfully');
+                fallbackVideo.pause();
+            }).catch(e => {
+                console.log('Fallback video play failed:', e);
+            });
+            
+            console.log('Created fallback video player for:', videoId);
+        };
+        
+        window.testVideoDisplay = function(videoId) {
+            const video = document.getElementById(videoId);
+            if (!video) return;
+            
+            console.log('Testing video display for:', videoId);
+            
+            // Create a completely new video element
+            const testVideo = document.createElement('video');
+            testVideo.style.width = '320px';
+            testVideo.style.height = '180px';
+            testVideo.style.border = '2px solid red';
+            testVideo.controls = true;
+            testVideo.src = video.currentSrc;
+            
+            // Add it to the page temporarily
+            video.parentNode.appendChild(testVideo);
+            
+            // Try to play it
+            testVideo.play().then(() => {
+                console.log('Test video plays successfully');
+                testVideo.pause();
+            }).catch(e => {
+                console.log('Test video play failed:', e);
+            });
+            
+            // Remove after 5 seconds
+            setTimeout(() => {
+                if (testVideo.parentNode) {
+                    testVideo.parentNode.removeChild(testVideo);
+                }
+            }, 5000);
+        };
+        
+        window.makeVideoVisible = function(videoId) {
+            const video = document.getElementById(videoId);
+            if (!video) return;
+            
+            console.log('Making video visible for:', videoId);
+            
+            // Force the video to be visible
+            video.style.display = 'block';
+            video.style.visibility = 'visible';
+            video.style.opacity = '1';
+            video.style.width = '320px';
+            video.style.height = '180px';
+            video.style.border = '2px solid green';
+            video.style.backgroundColor = 'black';
+            
+            // Try to play it
+            video.play().then(() => {
+                console.log('Video plays successfully');
+                video.pause();
+            }).catch(e => {
+                console.log('Video play failed:', e);
+            });
+            
+            // Update status
+            const statusElement = document.getElementById(`video-status-${videoId}`);
+            if (statusElement) {
+                statusElement.innerHTML = `<span class="text-green-500">Video made visible - try playing now</span>`;
+            }
         };
         
         window.setVideoVolume = function(videoId, volume) {
@@ -765,6 +1141,36 @@
 
         let occMode = 'occurrence'; // or 'event'
         let occTimelineId = null;
+
+        // Global deleteTimeline function
+        window.deleteTimeline = async function(id) {
+            if (!confirm('Are you sure you want to delete this timeline?')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/timelines/${id}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                
+                if (response.status === 401) {
+                    alert('Please log in again to delete timelines.');
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                if (response.ok) {
+                    timelines = timelines.filter(t => t.id !== id);
+                    renderTimelines();
+                    alert('Timeline deleted successfully');
+                } else {
+                    console.error('Failed to delete timeline');
+                    alert('Failed to delete timeline');
+                }
+            } catch (error) {
+                console.error('Error deleting timeline:', error);
+                alert('Error deleting timeline');
+            }
+        };
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
@@ -905,6 +1311,7 @@
             document.getElementById('cancel-event-btn').addEventListener('click', () => showModal(false));
             document.getElementById('back-btn').addEventListener('click', () => showView('dashboard'));
             document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+            document.getElementById('logout-btn').addEventListener('click', logout);
 
             // Close modal when clicking outside
             document.getElementById('add-event-modal').addEventListener('click', (e) => {
@@ -1082,25 +1489,126 @@
             
             const detailFileUpload = document.getElementById('detail-file-upload');
             if (detailFileUpload) {
-                detailFileUpload.addEventListener('change', function(e) {
+                detailFileUpload.addEventListener('change', async function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     
                     const id = document.getElementById('detail-message-form').dataset.msgId;
                     const files = Array.from(e.target.files);
                     
+                    console.log('File upload started for occurrence:', id);
+                    console.log('Files to upload:', files);
+                    
                     if (!detailFiles[id]) detailFiles[id] = [];
                     
-                    files.forEach(file => {
-                        detailFiles[id].push({
-                            name: file.name,
-                            size: file.size,
-                            type: file.type,
-                            url: URL.createObjectURL(file),
-                            timestamp: new Date().toISOString()
-                        });
-                    });
+                    // Show loading overlay
+                    const overlay = document.getElementById('upload-loading-overlay');
+                    const status = document.getElementById('upload-status');
+                    const progress = document.getElementById('upload-progress');
+                    const details = document.getElementById('upload-details');
                     
+                    overlay.classList.remove('hidden');
+                    
+                    // Upload each file to the server
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        try {
+                            console.log('Uploading file:', file.name);
+                            
+                            // Update status with forced reflow
+                            status.textContent = `Uploading ${file.name}...`;
+                            progress.style.width = `${(i / files.length) * 50}%`;
+                            progress.offsetHeight; // Force reflow
+                            
+                            const formData = new FormData();
+                            formData.append('file', file);
+                            
+                            // Create XMLHttpRequest for progress tracking
+                            const xhr = new XMLHttpRequest();
+                            
+                            // Track upload progress
+                            xhr.upload.addEventListener('progress', function(e) {
+                                if (e.lengthComputable) {
+                                    const uploadProgress = (e.loaded / e.total) * 50; // 50% of total progress
+                                    const totalProgress = (i / files.length) * 50 + uploadProgress;
+                                    progress.style.width = `${totalProgress}%`;
+                                    progress.offsetHeight; // Force reflow
+                                }
+                            });
+                            
+                            // Promise wrapper for XMLHttpRequest
+                            const uploadPromise = new Promise((resolve, reject) => {
+                                xhr.onload = function() {
+                                    if (xhr.status === 200) {
+                                        resolve(JSON.parse(xhr.responseText));
+                                    } else {
+                                        reject(new Error(`Upload failed: ${xhr.status}`));
+                                    }
+                                };
+                                xhr.onerror = () => reject(new Error('Upload failed'));
+                                xhr.open('POST', '/upload');
+                                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                                xhr.send(formData);
+                            });
+                            
+                            const result = await uploadPromise;
+                            console.log('Upload result:', result);
+                            
+                            // Update status for database save
+                            status.textContent = `Processing ${file.name}...`;
+                            progress.style.width = `${50 + (i / files.length) * 25}%`;
+                            progress.offsetHeight; // Force reflow
+                            
+                            // Save file attachment to database
+                            console.log('Saving to database for occurrence:', id);
+                            const dbResponse = await fetch(`/messages/${id}/files`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    file_url: result.url,
+                                    file_type: file.type,
+                                    file_size: file.size
+                                }),
+                                credentials: 'include'
+                            });
+                            
+                            console.log('Database response status:', dbResponse.status);
+                            
+                            if (dbResponse.ok) {
+                                const dbResult = await dbResponse.json();
+                                console.log('Database result:', dbResult);
+                                detailFiles[id].push({
+                                    name: file.name,
+                                    size: file.size,
+                                    type: file.type,
+                                    url: result.url,
+                                    timestamp: new Date().toISOString(),
+                                    media_id: dbResult.media_id
+                                });
+                                console.log('File added to detailFiles:', detailFiles[id]);
+                                
+                                // Update progress
+                                progress.style.width = `${75 + (i / files.length) * 25}%`;
+                                status.textContent = `Completed ${file.name}`;
+                                progress.offsetHeight; // Force reflow
+                            } else {
+                                const errorText = await dbResponse.text();
+                                console.error('Failed to save file to database:', dbResponse.status, errorText);
+                                alert(`Failed to save ${file.name} to database: ${errorText}`);
+                            }
+                        } catch (error) {
+                            console.error('Error uploading file:', error);
+                            alert(`Error uploading ${file.name}: ${error.message}`);
+                        }
+                    }
+                    
+                    // Hide overlay and update UI
+                    overlay.classList.add('hidden');
+                    progress.style.width = '100%';
+                    
+                    console.log('Rendering detail files for occurrence:', id);
                     window.renderDetailFiles(id);
                     e.target.value = ''; // Clear the input
                 });
@@ -1179,7 +1687,7 @@
                     const pos = Math.max(0, Math.min(((evDate - start) / total) * axisWidth, axisWidth));
                     console.log(`  Occurrence "${ev.title}": date=${ev.date}(${evDate}), pos=${pos}px`);
                     return `<div title="${ev.title}" class="absolute top-1/2 -translate-y-1/2" style="left:${pos}px">
-                        <div class="w-4 h-4 rounded-full border-2 border-white shadow cursor-pointer" style="background-color:#3b82f6"></div>
+                        <div class="w-5 h-5 rounded-full border-2 border-white shadow cursor-pointer" style="background-color:#3b82f6"></div>
                     </div>`;
                 }).join('');
                 // Render spans (bars)
@@ -1187,7 +1695,7 @@
                     const spanStart = ((dateToDays(ev.startDate) - start) / total) * axisWidth;
                     const spanEnd = ((dateToDays(ev.endDate) - start) / total) * axisWidth;
                     const width = Math.max(spanEnd - spanStart, 8);
-                    return `<div title="${ev.title}" class="absolute top-1/2 -translate-y-1/2 h-3 rounded opacity-70" style="left:${spanStart}px; width:${width}px; background-color:#22c55e"></div>`;
+                    return `<div title="${ev.title}" class="absolute top-1/2 -translate-y-1/2 h-2 rounded opacity-70" style="left:${spanStart}px; width:${width}px; background-color:#22c55e"></div>`;
                 }).join('');
 
                 return `
@@ -1233,7 +1741,7 @@
                         const dot = document.createElement('div');
                         dot.className = 'dot absolute top-1/2 -translate-y-1/2';
                         dot.style.left = `${pos}px`;
-                        dot.innerHTML = `<div class="w-4 h-4 rounded-full border-2 border-white shadow cursor-pointer" style="background-color:#3b82f6"></div>`;
+                        dot.innerHTML = `<div class="w-5 h-5 rounded-full border-2 border-white shadow cursor-pointer" style="background-color:#3b82f6"></div>`;
                         axis.appendChild(dot);
                         dot.onmouseenter = function(e) {
                             this.firstChild.style.boxShadow = '0 0 0 4px #60a5fa55';
@@ -1256,7 +1764,7 @@
                         const spanEnd = ((dateToDays(ev.endDate) - start) / total) * axisWidth;
                         const width = Math.max(spanEnd - spanStart, 8);
                         const span = document.createElement('div');
-                        span.className = 'span absolute top-1/2 -translate-y-1/2 h-3 rounded opacity-70';
+                        span.className = 'span absolute top-1/2 -translate-y-1/2 h-2 rounded opacity-70';
                         span.style.left = `${spanStart}px`;
                         span.style.width = `${width}px`;
                         span.style.backgroundColor = '#22c55e';
@@ -1440,6 +1948,15 @@
             }
         }
 
+        function logout() {
+            // Clear any stored data
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Redirect to logout endpoint which will clear the session
+            window.location.href = '/logout';
+        }
+
         // Prompt user for occurrence or span
         function promptAddOccurrence(timelineId) {
             openOccurrenceModal(timelineId);
@@ -1584,28 +2101,7 @@
             document.getElementById('occ-modal').classList.add('hidden');
         };
 
-        // Add deleteTimeline function
-        async function deleteTimeline(id) {
-            if (!confirm('Are you sure you want to delete this timeline?')) return;
-            
-            try {
-                const response = await fetch(`${API_BASE}/timelines/${id}`, {
-                    method: 'DELETE',
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    timelines = timelines.filter(t => t.id !== id);
-                    renderTimelines();
-                } else {
-                    console.error('Failed to delete timeline');
-                    alert('Failed to delete timeline');
-                }
-            } catch (error) {
-                console.error('Error deleting timeline:', error);
-                alert('Error deleting timeline');
-            }
-        }
+        // deleteTimeline function moved to global scope above
 
 
 
@@ -1635,11 +2131,7 @@
           return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
         
-        window.deleteDetailFile = function(id, idx) {
-          if (!detailFiles[id]) return;
-          detailFiles[id].splice(idx, 1);
-          renderDetailFiles(id);
-        };
+        // deleteDetailFile function moved to global scope above
 
         // Open Edit Timeline Modal
         window.openEditTimelineModal = function(timelineId) {
@@ -1835,12 +2327,28 @@
             btn.disabled = true;
             try {
                 if (type === 'occurrence') {
-                    await fetch(`${API_BASE}/occurrences/${eventId}`, { method: 'DELETE' });
+                    const resp = await fetch(`${API_BASE}/occurrences/${eventId}`, { 
+                        method: 'DELETE',
+                        credentials: 'include'
+                    });
+                    if (resp.status === 401) {
+                        alert('Please log in again to delete events.');
+                        window.location.href = '/login';
+                        return;
+                    }
                     await loadData();
                     renderEvents();
                     renderTimelines();
                 } else {
-                    const resp = await fetch(`${API_BASE}/global-events/${eventId}`, { method: 'DELETE' });
+                    const resp = await fetch(`${API_BASE}/global-events/${eventId}`, { 
+                        method: 'DELETE',
+                        credentials: 'include'
+                    });
+                    if (resp.status === 401) {
+                        alert('Please log in again to delete events.');
+                        window.location.href = '/login';
+                        return;
+                    }
                     if (!resp.ok && resp.status !== 204) {
                         alert('Failed to delete global event.');
                     }
@@ -1860,6 +2368,21 @@
         }
     </script>
     <div id="timeline-tooltip" class="fixed z-50 pointer-events-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg px-4 py-2 text-sm hidden"></div>
+    
+    <!-- Upload Loading Overlay -->
+    <div id="upload-loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <h3 class="text-lg font-semibold mb-2">Uploading Video...</h3>
+                <p id="upload-status" class="text-gray-600 dark:text-gray-400 mb-4">Processing video file...</p>
+                <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
+                    <div id="upload-progress" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <p id="upload-details" class="text-sm text-gray-500 dark:text-gray-400">This may take a few minutes for large videos</p>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
 
